@@ -1,41 +1,43 @@
 # Photogram Industrial: Associations, validations, and sample data
 
-## Walkthrough video
-
-**Please note**, the video is from a previous iteration of the project, so there are some differences:
-
-- Anything contained in the project "README" is now contained in this Lesson
-
-Did you read the differences above? Good! Then [here is a walkthrough video for this project.](https://share.descript.com/view/P3PGeVSVtMW )
-
-**As you watch the video, pause it frequently, read the associated text, and type out the code.**
-
 ## Getting started
 
-Let's continue with the `photogram-industrial`, keeping in mind a rough target to work towards:
+Let's continue building our Photogram Industrial project. Here's the target we're working towards:
 
-[photogram-industrial.matchthetarget.com](https://photogram-industrial.matchthetarget.com/)
+[pg-industrial.matchthetarget.com](https://pg-industrial.matchthetarget.com/)
 
-So navigate to `github.com/codespaces` (or reopen the previous lesson and use the "Load assignment" button) and reopen your `photogram-industrial` project codespace to continue building on what you accomplished in _Photogram Industrial Part 1_.
+Navigate to `github.com/codespaces` (or reopen the previous lesson and use the "Load assignment" button) and reopen your `photogram-industrial` project codespace to continue building on what you accomplished in _Photogram Industrial Part 1_.
 
-For this lesson, we'll work on a new git branch called `<your-initials>-photogram-industrial` (e.g., `rb-photogram-industrial`). We can make feature branches off of this branch as we go along.
+At this point, you should have Users and Photos tables with their models configured. In this lesson, we'll generate the remaining three models — Comments, Likes, and FollowRequests — wire up all of the associations between our five models, add validations and scopes, and finally get our sample data running.
 
-<div class="alert alert-info">
+Let's create a new branch for this work:
 
-Here are some [video instructions](https://share.descript.com/view/RLP4apAu5pp) for opening pull requests on GitHub. Follow along there to create a branch and open a _PR_. You'll see this video again in a later lesson as well.
-</div>
+```
+git checkout -b <your-initials>-models-and-associations
+```
 
-## Comments
+## Generate Comments scaffold
 
-We can generate the rest of our tables with a few more commands. Let's start with `comments`:
+We can generate the rest of our tables with a few more scaffold commands. Let's start with comments:
 
 ```
 rails generate scaffold comment author:references photo:references body:text
 ```
 
-For the `comments` migration file, we need to point the `author_id` foreign key to the `users` table (since we're using `author` instead of `user`), and we should constrain the `body` column to not be empty:
+This creates a migration, model, controller, views, and routes for comments. Notice that we used `author:references` instead of `user:references` — we want to call this association `author` because it reads much better in our code (`comment.author` vs `comment.user`).
 
-```ruby{4,5,6}
+Let's commit the generated files before we start editing:
+
+```
+git add -A
+git commit -m "generated Comments scaffold"
+```
+
+### Edit the Comments migration
+
+Open the generated migration file in `db/migrate/`. Here's the final version with our edits:
+
+```ruby{5:(41-73),6:(33-58),7:(18-31)}
 class CreateComments < ActiveRecord::Migration[8.0]
   def change
     create_table :comments do |t|
@@ -50,92 +52,68 @@ end
 ```
 {: filename="db/migrate/<date-time-of-migration>_create_comments.rb" }
 
-We also need to note our departure from convention in the `Comment` model:
+The key change is on the `author` line. The generator created `foreign_key: true`, which tells the database to look for a table called `authors`. That table doesn't exist — our table is `users`. So we specify the target table explicitly with `foreign_key: { to_table: :users }`.
 
-```ruby{2}
+We also added `null: false` on the `body` column. A comment without a body shouldn't exist.
+
+### Configure the Comment model
+
+Open `app/models/comment.rb` and replace the generated content:
+
+```ruby{2-3,5,7}
 class Comment < ApplicationRecord
-  belongs_to :author, class_name: "User"
-  belongs_to :photo
+  belongs_to :author, class_name: "User", counter_cache: true
+  belongs_to :photo, counter_cache: true
+
+  validates :body, presence: true
+
+  scope :default_order, -> { order(created_at: :asc) }
 end
 ```
 {: filename="app/models/comment.rb" }
 
-And we should add the `has_many` into `User`:
+Let's walk through this:
 
-```ruby{8}
-class User < ApplicationRecord
-  # Include default devise modules. Others available are:
-  # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
-  devise :database_authenticatable, :registerable,
-         :recoverable, :rememberable, :validatable
+- `belongs_to :author, class_name: "User"` — Since we named the association `author` instead of `user`, Rails would normally look for an `Author` model. The `class_name: "User"` tells it to use the `User` model instead.
+- `counter_cache: true` on both associations — Every time a comment is created or destroyed, Rails will automatically update the `comments_count` column on both the associated User _and_ the associated Photo. This avoids expensive `COUNT(*)` queries when displaying "24 comments" on a photo or a user's profile.
+- `validates :body, presence: true` — Matching our database-level `null: false` constraint with a model-level validation gives the user a friendly error message instead of a database error.
+- `scope :default_order` — Comments should display oldest-first (ascending), like a conversation.
 
-  has_many :own_photos, class_name: "Photo", foreign_key: "owner_id"
-  has_many :comments, foreign_key: "author_id"
-end
-```
-{: filename="app/models/user.rb" }
-
-And `Photo`:
-
-```ruby{3}
-class Photo < ApplicationRecord
-  belongs_to :owner, class_name: "User"
-  has_many :comments
-end
-```
-{: filename="app/models/photo.rb" }
-
-Now that you have `comments` in good shape, you can `rake db:migrate`.
-
-Next, run a `git status`. This should show a list of untracked files that were added or changed by our previous steps.
-
-We can add and commit all of them to our branch with
+Now migrate:
 
 ```
-% git add -A
-% git commit -m "Generated comments"
+rake db:migrate
 ```
 
-And push the commits (along with our new branch!) to Github for safekeeping with:
+And commit:
 
 ```
-% git push
+git add -A
+git commit -m "edited Comments migration and configured Comment model"
 ```
 
-But we get a fatal git error! RTEM! The _first_ time we push from a branch we need to run:
+## Generate FollowRequests scaffold
 
-```
-% git push --set-upstream origin branch-name
-```
-
-Then every subsequent time we can push with just `git push`.
-
-## FollowRequests
-
-For `follow_requests`, we can generate the migration file and scaffold with:
+Next up is the `FollowRequest` model — this is the table that powers the social graph. It tracks who wants to follow whom and whether that request has been accepted:
 
 ```
 rails generate scaffold follow_request recipient:references sender:references status
 ```
 
-And starting with the `FollowRequest` model, we'll need to note our departure from conventional names with the `recipient` and `sender` ID columns (both referencing the `users` table):
+We have two foreign keys here: `recipient` (the person being followed) and `sender` (the person who wants to follow). The `status` column will track whether the request is pending, accepted, or rejected.
 
-```ruby{2,3}
-class FollowRequest < ApplicationRecord
-  belongs_to :recipient, class_name: "User"
-  belongs_to :sender, class_name: "User"
-end
+Commit the generated files:
+
 ```
-{: filename="app/models/follow_request.rb" }
+git add -A
+git commit -m "generated FollowRequests scaffold"
+```
 
-<div class="alert alert-info">
+### Edit the FollowRequests migration
 
-If you're rusty, create an Idea in the [Association Accessor app](https://association-accessors.firstdraft.com/), add the five models, and plan out the association accessor methods you want to add there. [See the last six minutes beginning at 23:30 of this walkthrough video](https://share.descript.com/view/wy5mgzsL2WX) for a refresher on that tool.
-</div>
+Open the migration and make these changes:
 
-How about the migration file?
-
-```ruby{4:(43-77),5:(40-73),6:(23-42)}
+```ruby{5:(42-73),6:(40-71),7:(21-41)}
 class CreateFollowRequests < ActiveRecord::Migration[8.0]
   def change
     create_table :follow_requests do |t|
@@ -150,492 +128,19 @@ end
 ```
 {: filename="db/migrate/<date-time-of-migration>_create_follow_requests.rb" }
 
-We needed to indicate the departure from convention with `to_table: :users`, and we do want to be able to lookup follow requests by the user's ID, so we leave the default behavior of `index: true` for the foreign keys. We also want to set a default `:status` of `"pending"`, which will then be updated to either `"accepted"` or `"rejected"`.
+Both `recipient` and `sender` point to the `users` table, so we need `foreign_key: { to_table: :users }` on both. Neither can be null — every follow request must have both a sender and a recipient.
 
-With that, we can do another
-
-- `rake db:migrate`, then
-- `git add -A`, then
-- `git commit -m "Generated follow requests"`, and finally
-- `git push`.
-
-## Likes
-
-The last resource to generate is `likes`:
-
-```
-rails generate scaffold like fan:references photo:references
-```
-
-And beginning with the migration:
-
-```ruby{4:(37-70)}
-class CreateLikes < ActiveRecord::Migration[8.0]
-  def change
-    create_table :likes do |t|
-      t.references :fan, null: false, foreign_key: { to_table: :users }, index: true
-      t.references :photo, null: false, foreign_key: true, index: true
-
-      t.timestamps
-    end
-  end
-end
-```
-{: filename="db/migrate/<date-time-of-migration>_create_likes.rb" }
-
-In this case, we just need to make one change to point `fan_id` to the `users` table.
-
-Correspondingly in our model:
-
-```ruby{2}
-class Like < ApplicationRecord
-  belongs_to :fan, class_name: "User"
-  belongs_to :photo
-end
-```
-{: filename="app/models/like.rb" }
-
-And that looks good, so migrate, commit, and push like before.
-
-Now that you've pushed all this code to Github, [you can open a pull request for the new branch](https://share.descript.com/view/RLP4apAu5pp). That's a good thing to do early, then you can receive comments on your code and continue to push your commits and have them added to that PR!
-
-## Run `grade`
-
-At this point, try and run `grade` to see if the first few tests are passing. If you set up your migrations and models exactly as described up to this point, then you should see that many of the tests are passing. There is still much to do, but we're making progress!
-
-## Association accessors
-
-We have our resources in place. Now it's time to flesh out the business logic in our models.
-
-That is always my next step. Associations and validations. The direct associations have a good start. We were using the `references` datatype in the `scaffold` generator, which put in most of the `belongs_to` declarations corresponding to foreign key columns for us. We were also diligent about adding the other side of those 1-N associations with the `has_many` declarations we added whenever we saw a `belongs_to`. Nevertheless, let's go through all of our `belongs_to` / `has_many` and see some more useful things to add.
-
-### Direct associations: `belongs_to`
-
-In previous projects, we changed a default setting of Rails: we made it so that `belongs_to` allows foreign key columns to be blank unless you explicitly add the option `required: true`.
-
-In standard Rails applications, the default is opposite: `belongs_to` adds an _automatic validation_ to foreign key columns enforcing the presence of a valid value unless you explicitly add the option `optional: true`.
-
-So: if you decided to _remove_ the `null: false` database constraint from any of your foreign key columns in the migration file (e.g., change `t.references :recipient, null: false ...` to `t.references :recipient, null: true ...`), then you should also _add_ the `optional: true` option to the corresponding `belongs_to` association accessor.
-
-So remember — if you're ever in the situation of:
-
- - you're trying to save a record
- - the save is failing
- - you're doing the standard debugging technique of printing out `zebra.errors.full_messages`
- - you're seeing an inexplicable validation error message saying that a foreign key column is blank
- - now you know where the validation is coming from: `belongs_to` adds it automatically
- - so figure out why you're not providing a valid foreign key (usually it is because the parent object failed to save for its own validation reasons)
-
----
-
-#### `counter_cache`
-
-A handy option to add to `belongs_to` is `:counter_cache`. [Read about it](https://guides.rubyonrails.org/association_basics.html#options-for-belongs-to-counter-cache) and add it where you think it's appropriate. Fortunately, we already have columns ready and waiting.
+The `status` column has a default of `"pending"`. When a user sends a follow request, it starts as pending until the recipient decides to accept or reject it.
 
 <aside markdown="1">
-
-If you need even fancier counter caches in future projects, check out the [counter_culture gem](https://github.com/magnusvk/counter_culture).
+Notice that we changed the column type from `t.string :status` (the generator default) to include `default: "pending"`. The generator doesn't know about our business logic, so we always need to review and edit generated migrations before running them.
 </aside>
 
-Let's start with the `Like` model:
+### Configure the FollowRequest model
 
-```ruby
-class Like < ApplicationRecord
-  belongs_to :fan, class_name: "User"
-  belongs_to :photo
-end
-```
-{: filename="app/models/like.rb" }
+This model has some interesting features. Replace the generated content:
 
-At the moment, it's a bit difficult to decide where to add the `:counter_cache` option, because our model isn't annotated with column names. We could go into the `db/schema.rb` file and see the record of our database. (Note: **_NEVER_** edit the `schema.rb` file. It is auto-generated whenever you run `rake db:migrate`.)
-
-Instead of constantly referencing this file, let's install the `annotaterb` gem. You can read about the [annotaterb gem in its Github README](https://github.com/drwl/annotaterb?tab=readme-ov-file#annotaterb).
-
-<div class="alert alert-danger" markdown="1">
-
-The annotaterb gem was already added in this iteration of the project, so you don't need to actually take the steps shown here and in the video. But you should watch and read along!
-</div>
-
-Typically, we add the gem to the `:development` group in our `Gemfile`. (There's no use for this in production or test, so why waste memory loading it there?)
-
-```ruby
-# ...
-group :development do
-  gem 'annotaterb'
-# ...
-```
-{: filename="Gemfile" }
-
-Then run `bundle install` (just `bundle` for short).
-
-While we're in the `Gemfile`, let's also add the `strip_attributes` gem, which automatically strips leading and trailing whitespace from model attributes before validation:
-
-```ruby
-gem "strip_attributes"
-```
-{: filename="Gemfile" }
-
-Run `bundle install` again after adding it.
-
-With the `annotaterb` gem installed, we can now run the terminal command:
-
-```
-annotaterb models
-```
-
-Alternatively, you can just run:
-
-```
-rails g annotate_rb:install
-```
-
-Similar to how we finished installing Devise. And this will create a rake task file `lib/tasks/annotate_rb.rake`, so that anytime we run `rake db:migrate` the annotation is run automatically.
-
-Now at the top of our `Like` model in `app/models/like.rb`, we should see the helpful annotations:
-
-```ruby
-# == Schema Information
-#
-# Table name: likes
-#
-#  id         :bigint           not null, primary key
-#  created_at :datetime         not null
-#  updated_at :datetime         not null
-#  fan_id     :bigint           not null
-#  photo_id   :bigint           not null
-```
-
-Wonderful. Now let's get back to what we were doing before: adding the `:counter_cache` to any `belongs_to` whenever I'm trying to keep track of the number of children objects that I've got.
-
-Let's start with the `Comment` model
-
-```ruby
-# == Schema Information
-#
-# Table name: comments
-#
-#  id         :bigint           not null, primary key
-#  body       :text
-#  created_at :datetime         not null
-#  updated_at :datetime         not null
-#  author_id  :bigint           not null
-#  photo_id   :bigint           not null
-# ...
-
-class Comment < ApplicationRecord
-  belongs_to :author, class_name: "User"
-  belongs_to :photo
-end
-```
-{: filename="app/models/comment.rb" }
-
-So anytime a comment is created, do I want to update the `author` with the count of the comments? We were planning to do that because we added a `comments_count` column in the `users` table:
-
-```ruby{6}
-# == Schema Information
-#
-# Table name: users
-#
-#  id                     :bigint           not null, primary key
-#  comments_count         :integer          default(0)
-#  email                  :citext           default(""), not null
-# ...
-```
-{: filename="app/models/user.rb" }
-
-That means we can just add this option on `belongs_to: author`:
-
-```ruby{3:(41-61)}
-# ...
-class Comment < ApplicationRecord
-  belongs_to :author, class_name: "User", counter_cache: true
-  belongs_to :photo, counter_cache: true
-end
-```
-{: filename="app/models/comment.rb" }
-
-For this to work, you have to have a column in the `user` table called _exactly_ `comments_count`. We also want to keep count on the `belongs_to :photo`, so add the `counter_cache: true` there as well.
-
-Now in the `Like` model:
-
-```ruby{3-4}
-# ...
-class Like < ApplicationRecord
-  belongs_to :fan, class_name: "User", counter_cache: true
-  belongs_to :photo, counter_cache: true
-end
-```
-{: filename="app/models/like.rb" }
-
-Because both `User` and `Photo` have `likes_count` columns.
-
-And `Photo`:
-
-```ruby{3}
-# ...
-class Photo < ApplicationRecord
-  belongs_to :owner, class_name: "User", counter_cache: true
-  has_many :comments
-end
-```
-{: filename="app/models/photo.rb" }
-
-We already included a `photos_count` column in our `users` table from the initial generation in Part 1, so this counter cache should work right away.
-
-_Have you been git committing along the way?!_
-
----
-
-### Direct associations: `has_many`
-
-Now for each `belongs_to`, there should be an inverse `has_many`. Let's go through and make sure we have all of these inverse 1-N associations.
-
-Let's check off the `belongs_to` statements one by one. In the `Comment` model (`app/models/comment.rb`), we see a `belongs_to :author ...`. That means, for `User` we need:
-
-```ruby{3}
-class User < ApplicationRecord
-  # ...
-  has_many :comments, foreign_key: :author_id
-end
-```
-{: filename="app/models/user.rb" }
-
-We need to specify that the foreign key column in comments is not `user_id`, but rather `author_id`. We don't need to say `class_name: "Comment"`, because it matches with the method name `has_many :comments`.
-
-The `Comment` model also contains a `belongs_to :photo ...`. That means, for `Photo` we need:
-
-```ruby{3}
-class Photo < ApplicationRecord
-  # ...
-  has_many :comments
-end
-```
-{: filename="app/models/photo.rb" }
-
-Nothing special there. The foreign key in the `comments` table is `photo_id` (check it with the annotation at the top of `app/models/comment.rb`), and the class name matches the method again.
-
-In `FollowRequest`, we have `belongs_to :recipient` and `belongs_to :sender`, so we need two corresponding associations in `User`:
-
-```ruby{3-4}
-class User < ApplicationRecord
-  # ...
-  has_many :follow_requests, foreign_key: :sender_id, class_name: "FollowRequest"
-  has_many :follow_requests, foreign_key: :recipient_id, class_name: "FollowRequest"
-end
-```
-{: filename="app/models/user.rb" }
-
-But we can't have two associations with the same name! So what do we do?
-
-How about this naming:
-
-```ruby{1:(12-32),2:(12-36)}
-  has_many :sent_follow_requests, foreign_key: :sender_id, class_name: "FollowRequest"
-  has_many :received_follow_requests, foreign_key: :recipient_id, class_name: "FollowRequest"
-```
-
-On to `Like`, we find `belongs_to :fan` and `belongs_to :photo`. So, we need corresponding `has_many`s in `User` and `Photo`. First for `User`:
-
-```ruby{3}
-class User < ApplicationRecord
-  # ...
-  has_many :likes, foreign_key: :fan_id
-end
-```
-{: filename="app/models/user.rb" }
-
-Then for `Photo`:
-
-```ruby{3}
-class Photo < ApplicationRecord
-  # ...
-  has_many :likes
-end
-```
-{: filename="app/models/photo.rb" }
-
-And, while we're in that `Photo` model, we see that we need a `has_many` for the `User` model to go with the `belongs_to: owner`. So back in the `User` model:
-
-```ruby{3}
-class User < ApplicationRecord
-  # ...
-  has_many :own_photos, foreign_key: :owner_id, class_name: "Photo"
-end
-```
-{: filename="app/models/user.rb" }
-
-Since the `User` is going to have a few different associations to `Photo`, we gave this one a distinct method name and pointed it to the correct table.
-
-That was a lot of typing! I didn't even check any of the associations in the `rails console`. This is the importance of our `sample_data` task. When we write and run the sample data, any mistakes or holes in our associations will become clear.
-
-Be sure to commit and push after all that work!
-
-### Indirect associations
-
-Before we write any sample data tasks, we should finish trying to write out our indirect associations.
-
-For a given `User`, I need to know who they're following so that I can get the photos posted by those people ("leaders"). And then have another method ("discover") to find out the photos that the people that I'm following have liked.
-
-Let's get started.
-
-Our first N-N is `fans` to `photos` through `likes`. So how do we get there?
-
-We need to go the `Photo` model, and add a `has_many` association for the `fans` of each photo that goes through the `likes` on the photo to the `User` model:
-
-```ruby{4}
-class Photo < ApplicationRecord
-  # ...
-  has_many :likes
-  has_many :fans, through: :likes
-end
-```
-{: filename="app/models/photo.rb" }
-
-When we call `has_many :likes`, we have to remember that the method is referring to the model `Like`. If we examine `app/models/like.rb`, it has the association `belongs_to :fan ...`, which returns `ActiveRecord` instances of `User` from our database.
-
-Because we named our new association in `Photo` the plural `:fans`, we don't need to write: `has_many :fans, through: :likes, source: :fan`. We have the conventional name, so Rails will figure it out without the `source:` keyword.
-
-Now, if there's a path from a `Photo` to the `fans`, then it's also possible to go from the `fans` to the `Photo`. Am I ever going to want to go from the user to all of the photos that they have liked? Yes! So let's add this inverse indirect association to `User`:
-
-```ruby{10}
-class User < ApplicationRecord
-  # ...
-  has_many :sent_follow_requests, foreign_key: :sender_id, class_name: "FollowRequest"
-  has_many :received_follow_requests, foreign_key: :recipient_id, class_name: "FollowRequest"
-
-  has_many :likes, foreign_key: :fan_id
-
-  has_many :own_photos, foreign_key: :owner_id, class_name: "Photo"
-
-  has_many :liked_photos, through: :likes, source: :photo
-end
-```
-{: filename="app/models/user.rb" }
-
-We get from a user to their collection of likes with the `has_many :likes` we already defined, which brings us to the `Like` model. And in `Like`, we have defined `belongs_to: :photo`, which returns the collection of photos that we're after. We didn't name our new `User` association `:photos` conventionally, so this time we need the `source: :photo`.
-
-Now comes the important `:leaders` association, which defines who a user is following.
-
-The user has `:sent_follow_requests` to people, so we can go `through:` that. And once we get to `sent_follow_requests`, we need to go to the recipients of those follow requests. In `FollowRequest`, we already setup the `belongs_to: :recipient` to return that. So now, we can write:
-
-```ruby{12}
-class User < ApplicationRecord
-  # ...
-  has_many :sent_follow_requests, foreign_key: :sender_id, class_name: "FollowRequest"
-  has_many :received_follow_requests, foreign_key: :recipient_id, class_name: "FollowRequest"
-
-  has_many :likes, foreign_key: :fan_id
-
-  has_many :own_photos, foreign_key: :owner_id, class_name: "Photo"
-
-  has_many :liked_photos, through: :likes, source: :photo
-
-  has_many :leaders, through: :sent_follow_requests, source: :recipient
-end
-```
-{: filename="app/models/user.rb" }
-
-But that's not quite all! We need to only return the `:recipient`s who have `"accepted"` in the `FollowRequest` `status` column! That starts out as `"pending"`. Essentially, we want a `.where(status: "accepted")` on the `:sent_follow_requests` before we even get to `:recipient` to filter the requests by.
-
-What we want is _another_ association in `User` called `:accepted_sent_follow_requests`.
-
-This is almost the same as `:sent_follow_requests`, but now with the addition of a second argument to `has_many` that we haven't talked much about: a `Proc` with the syntax `-> {}`. This syntax indicates a small, nameless block of code that will be called on the collection before it is returned. So we can add something like:
-
-```ruby
--> { where(status: "accepted") }
-```
-
-This is how we build powerful scoped associations. You can read more about [using scopes in your associations here](https://remimercier.com/scoped-active-record-associations/). We'll return to scopes in a bit when we finish with associations and validations.
-
-Now, finally, we can end up with:
-
-```ruby{4,14}
-class User < ApplicationRecord
-  # ...
-  has_many :sent_follow_requests, foreign_key: :sender_id, class_name: "FollowRequest"
-  has_many :accepted_sent_follow_requests, -> { where(status: "accepted") }, foreign_key: :sender_id, class_name: "FollowRequest"
-
-  has_many :received_follow_requests, foreign_key: :recipient_id, class_name: "FollowRequest"
-
-  has_many :likes, foreign_key: :fan_id
-
-  has_many :own_photos, foreign_key: :owner_id, class_name: "Photo"
-
-  has_many :liked_photos, through: :likes, source: :photo
-
-  has_many :leaders, through: :accepted_sent_follow_requests, source: :recipient
-end
-```
-{: filename="app/models/user.rb" }
-
-Did we do that all correctly? It can be hard to tell, but don't worry, the bugs will reveal themselves when we write our sample data, and this is a pretty good start.
-
-While in the `User` model, let's also make an `:accepted_received_follow_requests` association, and the corresponding `:followers` association, with the same logic we just used to get `:leaders`.
-
-We also need a `:pending_received_follow_requests` association and corresponding `:pending` association, so that users with private accounts can see and manage incoming follow requests:
-
-```ruby{7,8,20,22,24}
-class User < ApplicationRecord
-  # ...
-  has_many :sent_follow_requests, foreign_key: :sender_id, class_name: "FollowRequest"
-  has_many :accepted_sent_follow_requests, -> { where(status: "accepted") }, foreign_key: :sender_id, class_name: "FollowRequest"
-
-  has_many :received_follow_requests, foreign_key: :recipient_id, class_name: "FollowRequest"
-  has_many :accepted_received_follow_requests, -> { where(status: "accepted") }, foreign_key: :recipient_id, class_name: "FollowRequest"
-  has_many :pending_received_follow_requests, -> { where(status: "pending") }, foreign_key: :recipient_id, class_name: "FollowRequest"
-
-  has_many :likes, foreign_key: :fan_id
-
-  has_many :own_photos, foreign_key: :owner_id, class_name: "Photo"
-
-  has_many :liked_photos, through: :likes, source: :photo
-
-  has_many :leaders, through: :accepted_sent_follow_requests, source: :recipient
-
-  has_many :followers, through: :accepted_received_follow_requests, source: :sender
-
-  has_many :pending, through: :pending_received_follow_requests, source: :sender
-
-  has_many :feed, through: :leaders, source: :own_photos
-
-  has_many :discover, -> { distinct }, through: :leaders, source: :liked_photos
-end
-```
-{: filename="app/models/user.rb" }
-
-(Note the `-> { distinct }` on the discover association. We need that scope to avoid duplicates when multiple leaders liked the same photo.)
-
-Continuing with the `User` associations accessors (there are quite a few!), we built a `:feed` of photos for each user, which contains the photos _posted_ by their `:leaders`. And a `:discover` page, which contains the photos _liked_ by their `:leaders`.
-
-That's a lot of associations! Isn't it marvelous? You could have used the [association accessor wizard](https://association-accessors.firstdraft.com/), or just think carefully through it.
-
-To write some, or all of these by hand would be really difficult in correct and performant SQL. Rails does it all for us.
-
-Definitely time to `grade`, and, if we see our model tests are passing, git commit and push! (None of the user interface specs are passing yet, but that's okay.)
-
-## Validations
-
-Next, let's write some validations that we think might come in handy for our models. We can go through each column in the table (thanks to our handy `annotaterb` gem) and decide if, and what the validation should be.
-
-We can begin with the `Comment` model:
-
-```ruby{5}
-class Comment < ApplicationRecord
-  belongs_to :author, class_name: "User", counter_cache: true
-  belongs_to :photo, counter_cache: true
-
-  validates :body, presence: true
-end
-```
-{: filename="app/models/comment.rb" }
-
-The only thing we need here is the `presence: true` for the `body` column. We don't really need the comments to be unique or have a certain length.
-
-As we discussed, having a `belongs_to` association will validate the `author_id` and `photo_id` columns by default -- a feature we switched off previously.
-
-For the `FollowRequest` model, we should add some important validations. We want to make sure a user can't send duplicate follow requests, and that users can't follow themselves:
-
-```ruby{6-11}
+```ruby{2-3,5,7,9-10,12-16}
 class FollowRequest < ApplicationRecord
   belongs_to :recipient, class_name: "User"
   belongs_to :sender, class_name: "User"
@@ -655,11 +160,103 @@ end
 ```
 {: filename="app/models/follow_request.rb" }
 
-The `uniqueness` validation with a `scope` ensures that a user can only have one follow request per recipient. The custom validation `users_cant_follow_themselves` prevents a user from sending a follow request to themselves. (We also added the `enum` here, which we'll discuss in the Enum section below.)
+There's a lot going on here, so let's break it down.
 
-For `Like`, we should also add a uniqueness validation — a user should only be able to like a photo once:
+### The enum
 
-```ruby{5}
+```ruby
+enum :status, { pending: "pending", rejected: "rejected", accepted: "accepted" }
+```
+
+This is one of Rails' most powerful features. An `enum` declaration on a string column does several things automatically:
+
+1. **Query methods**: You can call `follow_request.pending?`, `follow_request.accepted?`, or `follow_request.rejected?` to check the status.
+2. **Update methods**: You can call `follow_request.accepted!` to change the status to "accepted" and save the record in one step.
+3. **Scopes**: You get `FollowRequest.pending`, `FollowRequest.accepted`, and `FollowRequest.rejected` for free — these are scopes that return all records with that status.
+
+That last point is particularly important. Later, when we build associations on the User model, we'll use these enum scopes to filter follow requests:
+
+```ruby
+has_many :accepted_sent_follow_requests, -> { accepted }, foreign_key: :sender_id, class_name: "FollowRequest"
+```
+
+The `-> { accepted }` lambda works because `enum` defined that scope for us. We'll get to this soon.
+
+### Scoped uniqueness validation
+
+```ruby
+validates :recipient_id, uniqueness: { scope: :sender_id, message: "already requested" }
+```
+
+This prevents a user from sending multiple follow requests to the same person. The `scope: :sender_id` means "the combination of `recipient_id` and `sender_id` must be unique." Alice can only send one follow request to Bob.
+
+### Custom validation
+
+```ruby
+validate :users_cant_follow_themselves
+
+def users_cant_follow_themselves
+  if sender_id == recipient_id
+    errors.add(:sender_id, "can't follow themselves")
+  end
+end
+```
+
+Notice that this uses `validate` (singular) rather than `validates` (plural). The `validates` method is for built-in validators like `presence`, `uniqueness`, and `format`. The `validate` method is for custom validation methods that you write yourself.
+
+Our custom validation prevents a user from sending a follow request to themselves — which would be nonsensical.
+
+Now migrate:
+
+```
+rake db:migrate
+```
+
+And commit:
+
+```
+git add -A
+git commit -m "edited FollowRequests migration and configured FollowRequest model"
+```
+
+## Generate Likes scaffold
+
+The last table we need is Likes — tracking which users have liked which photos:
+
+```
+rails generate scaffold like fan:references photo:references
+```
+
+We're calling the user a `fan` rather than `user` because, again, `like.fan` reads much better than `like.user`.
+
+Commit the generated files:
+
+```
+git add -A
+git commit -m "generated Likes scaffold"
+```
+
+### Edit the Likes migration
+
+```ruby{5:(37-68),6:(33-58)}
+class CreateLikes < ActiveRecord::Migration[8.0]
+  def change
+    create_table :likes do |t|
+      t.references :fan, null: false, foreign_key: { to_table: :users }, index: true
+      t.references :photo, null: false, foreign_key: true, index: true
+
+      t.timestamps
+    end
+  end
+end
+```
+{: filename="db/migrate/<date-time-of-migration>_create_likes.rb" }
+
+Same pattern as before: `fan` points to the `users` table (so we need `to_table: :users`), while `photo` points to the `photos` table (so `foreign_key: true` works as-is).
+
+### Configure the Like model
+
+```ruby{2-3,5}
 class Like < ApplicationRecord
   belongs_to :fan, class_name: "User", counter_cache: true
   belongs_to :photo, counter_cache: true
@@ -669,26 +266,267 @@ end
 ```
 {: filename="app/models/like.rb" }
 
-On to `Photo`. Aside from foreign keys and columns with default values, only the `caption` and `image` columns need validations:
+The `counter_cache: true` on both associations updates `likes_count` on the User and the Photo whenever a like is created or destroyed. The uniqueness validation prevents a user from liking the same photo twice.
 
-```ruby{5-6}
+Now migrate:
+
+```
+rake db:migrate
+```
+
+And commit:
+
+```
+git add -A
+git commit -m "edited Likes migration and configured Like model"
+```
+
+## Building out the associations
+
+Now comes the most important part of this lesson. We have five models with basic `belongs_to` associations already in place. But the real power of Rails comes from `has_many` and `has_many :through` associations on the "other side" of each relationship. These let us traverse the social graph with elegant, readable code.
+
+Let's build them up step by step, starting with the Photo model and then the User model.
+
+### Photo model: adding has_many associations
+
+Open `app/models/photo.rb`. Right now it has a `belongs_to :owner` and some validations from Part 1. Let's add the `has_many` associations:
+
+```ruby{6-8}
 class Photo < ApplicationRecord
-  # ...
+  has_one_attached :image, dependent: :purge_later
+
+  belongs_to :owner, class_name: "User", counter_cache: true
+
+  has_many :comments, dependent: :destroy
+
+  has_many :likes, dependent: :destroy
+
   has_many :fans, through: :likes
 
   validates :caption, presence: true
+
   validates :image, presence: true
+
+  scope :latest, -> { order(created_at: :desc) }
+  scope :pinned, -> { where(pinned: true) }
+  scope :unpinned, -> { where(pinned: false) }
 end
 ```
 {: filename="app/models/photo.rb" }
 
-Finally, we have `User`. All of the password and email things are being taken care of by Devise, so we don't need to worry about them. And we've set defaults on the `_count` columns and `private`.
+The new lines are:
 
-We should add a validation for the presence and uniqueness of a `username`, along with a format validation to restrict it to letters, numbers, periods, and underscores:
+- `has_many :comments, dependent: :destroy` — A photo has many comments. When a photo is deleted, its comments are deleted too.
+- `has_many :likes, dependent: :destroy` — Same idea for likes.
+- `has_many :fans, through: :likes` — This is a **has_many :through** association. It says: "A photo has many fans, _through_ its likes." Rails will follow the chain: Photo -> Likes -> Fan (User). This lets us write `photo.fans` to get all the users who liked a given photo — no manual joins required.
 
-```ruby{5-9}
+<div class="alert alert-info">
+
+`has_many :through` is one of the most powerful features in Rails. It lets you traverse a chain of associations to reach a distant related model. The "through" table (in this case, `likes`) acts as a **join table** connecting photos to users. This is how you model many-to-many relationships in Rails.
+</div>
+
+### User model: building up step by step
+
+The User model is where all the associations come together. We're going to build it up incrementally. Each version adds a few new lines, highlighted for clarity.
+
+First, let's add the `has_many` for comments. Open `app/models/user.rb`:
+
+```ruby{10}
 class User < ApplicationRecord
-  # ...
+  # Include default devise modules. Others available are:
+  # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
+  devise :database_authenticatable, :registerable,
+         :recoverable, :rememberable, :validatable
+
+  has_one_attached :avatar_image, dependent: :purge_later
+  has_one_attached :profile_banner, dependent: :purge_later
+
+  has_many :comments, foreign_key: :author_id, dependent: :destroy
+
+  has_many :own_photos, foreign_key: :owner_id, class_name: "Photo", dependent: :destroy
+
+  validates :username,
+    presence: true,
+    uniqueness: true,
+    format: {
+      with: /\A[\w_\.]+\z/i,
+      message: "can only contain letters, numbers, periods, and underscores"
+    }
+
+  validates :website, url: { allow_blank: true }
+
+  before_create :set_default_avatar
+
+  def set_default_avatar
+    image = "https://res.cloudinary.com/dzhwwlb9e/image/upload/v1773240782/960px-Default_pfp.svg_dpntzd_ga9htr.png"
+    avatar_image.attach(
+      io: URI.open(image),
+      filename: image.split("/").last,
+      content_type: "image/jpg"
+    )
+  end
+end
+```
+{: filename="app/models/user.rb" }
+
+We need `foreign_key: :author_id` because the `comments` table has a column called `author_id`, not `user_id`. Without specifying the foreign key, Rails would look for `user_id` and find nothing.
+
+Next, let's add the follow request associations — both sent and received:
+
+```ruby{12-18}
+class User < ApplicationRecord
+  # Include default devise modules. Others available are:
+  # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
+  devise :database_authenticatable, :registerable,
+         :recoverable, :rememberable, :validatable
+
+  has_one_attached :avatar_image, dependent: :purge_later
+  has_one_attached :profile_banner, dependent: :purge_later
+
+  has_many :comments, foreign_key: :author_id, dependent: :destroy
+
+  has_many :sent_follow_requests, foreign_key: :sender_id, class_name: "FollowRequest", dependent: :destroy
+
+  has_many :accepted_sent_follow_requests, -> { accepted }, foreign_key: :sender_id, class_name: "FollowRequest"
+
+  has_many :received_follow_requests, foreign_key: :recipient_id, class_name: "FollowRequest", dependent: :destroy
+
+  has_many :accepted_received_follow_requests, -> { accepted }, foreign_key: :recipient_id, class_name: "FollowRequest"
+
+  has_many :pending_received_follow_requests, -> { pending }, foreign_key: :recipient_id, class_name: "FollowRequest"
+
+  has_many :own_photos, foreign_key: :owner_id, class_name: "Photo", dependent: :destroy
+
+  validates :username,
+    presence: true,
+    uniqueness: true,
+    format: {
+      with: /\A[\w_\.]+\z/i,
+      message: "can only contain letters, numbers, periods, and underscores"
+    }
+
+  validates :website, url: { allow_blank: true }
+
+  before_create :set_default_avatar
+
+  def set_default_avatar
+    image = "https://res.cloudinary.com/dzhwwlb9e/image/upload/v1773240782/960px-Default_pfp.svg_dpntzd_ga9htr.png"
+    avatar_image.attach(
+      io: URI.open(image),
+      filename: image.split("/").last,
+      content_type: "image/jpg"
+    )
+  end
+end
+```
+{: filename="app/models/user.rb" }
+
+This is a big chunk, so let's unpack it:
+
+- `has_many :sent_follow_requests` — All follow requests _this user sent_ (where they are the `sender`). We need both `foreign_key: :sender_id` and `class_name: "FollowRequest"` because the association name doesn't match the model name.
+- `has_many :accepted_sent_follow_requests, -> { accepted }` — A _scoped_ version of sent follow requests that only returns the accepted ones. The `-> { accepted }` lambda uses the scope that our `enum` on FollowRequest created for us. This is where the enum really pays off.
+- `has_many :received_follow_requests` — All follow requests _sent to this user_ (where they are the `recipient`).
+- `has_many :accepted_received_follow_requests, -> { accepted }` — Only the accepted ones among received requests.
+- `has_many :pending_received_follow_requests, -> { pending }` — Only the pending ones. We'll use this to show a user their pending follow requests that need action.
+
+<aside markdown="1">
+Why do we have `dependent: :destroy` on `sent_follow_requests` and `received_follow_requests` but not on the scoped versions (`accepted_sent_follow_requests`, etc.)? Because the scoped versions are just filtered views of the same underlying records. If we put `dependent: :destroy` on those too, Rails would try to destroy the same records multiple times. We only need it on the "base" associations.
+</aside>
+
+Now let's add the likes association:
+
+```ruby{22}
+class User < ApplicationRecord
+  # Include default devise modules. Others available are:
+  # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
+  devise :database_authenticatable, :registerable,
+         :recoverable, :rememberable, :validatable
+
+  has_one_attached :avatar_image, dependent: :purge_later
+  has_one_attached :profile_banner, dependent: :purge_later
+
+  has_many :comments, foreign_key: :author_id, dependent: :destroy
+
+  has_many :sent_follow_requests, foreign_key: :sender_id, class_name: "FollowRequest", dependent: :destroy
+
+  has_many :accepted_sent_follow_requests, -> { accepted }, foreign_key: :sender_id, class_name: "FollowRequest"
+
+  has_many :received_follow_requests, foreign_key: :recipient_id, class_name: "FollowRequest", dependent: :destroy
+
+  has_many :accepted_received_follow_requests, -> { accepted }, foreign_key: :recipient_id, class_name: "FollowRequest"
+
+  has_many :pending_received_follow_requests, -> { pending }, foreign_key: :recipient_id, class_name: "FollowRequest"
+
+  has_many :likes, foreign_key: :fan_id, dependent: :destroy
+
+  has_many :own_photos, foreign_key: :owner_id, class_name: "Photo", dependent: :destroy
+
+  validates :username,
+    presence: true,
+    uniqueness: true,
+    format: {
+      with: /\A[\w_\.]+\z/i,
+      message: "can only contain letters, numbers, periods, and underscores"
+    }
+
+  validates :website, url: { allow_blank: true }
+
+  before_create :set_default_avatar
+
+  def set_default_avatar
+    image = "https://res.cloudinary.com/dzhwwlb9e/image/upload/v1773240782/960px-Default_pfp.svg_dpntzd_ga9htr.png"
+    avatar_image.attach(
+      io: URI.open(image),
+      filename: image.split("/").last,
+      content_type: "image/jpg"
+    )
+  end
+end
+```
+{: filename="app/models/user.rb" }
+
+Again, we need `foreign_key: :fan_id` because the `likes` table uses `fan_id`, not `user_id`.
+
+### The has_many :through associations
+
+Now for the grand finale — the `has_many :through` associations that make our social network actually work. These let us traverse chains of associations to reach distant related models.
+
+```ruby{26-34}
+class User < ApplicationRecord
+  # Include default devise modules. Others available are:
+  # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
+  devise :database_authenticatable, :registerable,
+         :recoverable, :rememberable, :validatable
+
+  has_one_attached :avatar_image, dependent: :purge_later
+  has_one_attached :profile_banner, dependent: :purge_later
+
+  has_many :comments, foreign_key: :author_id, dependent: :destroy
+
+  has_many :sent_follow_requests, foreign_key: :sender_id, class_name: "FollowRequest", dependent: :destroy
+
+  has_many :accepted_sent_follow_requests, -> { accepted }, foreign_key: :sender_id, class_name: "FollowRequest"
+
+  has_many :received_follow_requests, foreign_key: :recipient_id, class_name: "FollowRequest", dependent: :destroy
+
+  has_many :accepted_received_follow_requests, -> { accepted }, foreign_key: :recipient_id, class_name: "FollowRequest"
+
+  has_many :pending_received_follow_requests, -> { pending }, foreign_key: :recipient_id, class_name: "FollowRequest"
+
+  has_many :likes, foreign_key: :fan_id, dependent: :destroy
+
+  has_many :own_photos, foreign_key: :owner_id, class_name: "Photo", dependent: :destroy
+
+  has_many :liked_photos, through: :likes, source: :photo
+
+  has_many :leaders, through: :accepted_sent_follow_requests, source: :recipient
+
+  has_many :followers, through: :accepted_received_follow_requests, source: :sender
+
+  has_many :pending, through: :pending_received_follow_requests, source: :sender
+
+  has_many :feed, through: :leaders, source: :own_photos
+
   has_many :discover, -> { distinct }, through: :leaders, source: :liked_photos
 
   validates :username,
@@ -698,172 +536,238 @@ class User < ApplicationRecord
       with: /\A[\w_\.]+\z/i,
       message: "can only contain letters, numbers, periods, and underscores"
     }
+
+  validates :website, url: { allow_blank: true }
+
+  attr_accessor :remove_profile_banner
+  after_save :purge_profile_banner, if: :remove_profile_banner
+
+  scope :past_week, -> { where(created_at: 1.week.ago...) }
+
+  scope :by_likes, -> { order(likes_count: :desc) }
+
+  before_create :set_default_avatar
+
+  def self.ransackable_attributes(auth_object = nil)
+    [ "username" ]
+  end
+
+  def set_default_avatar
+    image = "https://res.cloudinary.com/dzhwwlb9e/image/upload/v1773240782/960px-Default_pfp.svg_dpntzd_ga9htr.png"
+    avatar_image.attach(
+      io: URI.open(image),
+      filename: image.split("/").last,
+      content_type: "image/jpg"
+    )
+  end
+
+  def purge_profile_banner
+    profile_banner.purge_later
+  end
 end
 ```
 {: filename="app/models/user.rb" }
 
-When that's done, commit again.
+This is the complete, final User model. Let's walk through each of the new `has_many :through` associations and the other additions.
 
-### `strip_attributes` in `ApplicationRecord`
-
-Since we added the `strip_attributes` gem earlier, let's put it to use. By adding `strip_attributes` to `ApplicationRecord`, all models in our app will automatically strip leading and trailing whitespace from their attributes before validation. This prevents issues like users accidentally signing up with `" alice "` as their username:
+#### liked_photos
 
 ```ruby
-class ApplicationRecord < ActiveRecord::Base
-  primary_abstract_class
+has_many :liked_photos, through: :likes, source: :photo
+```
 
-  strip_attributes
+"A user has many liked photos, through their likes." Rails follows the chain: User -> Likes -> Photo. The `source: :photo` tells Rails which association on the `Like` model to follow (since `Like` has `belongs_to :photo`). Now we can write `user.liked_photos` to get all the photos a user has liked.
+
+#### leaders and followers
+
+```ruby
+has_many :leaders, through: :accepted_sent_follow_requests, source: :recipient
+has_many :followers, through: :accepted_received_follow_requests, source: :sender
+```
+
+These are the core social graph associations:
+
+- **Leaders**: People I follow (and who accepted my request). Chain: User -> Accepted Sent Follow Requests -> Recipient (User).
+- **Followers**: People who follow me (whose requests I accepted). Chain: User -> Accepted Received Follow Requests -> Sender (User).
+
+The `source:` option tells Rails which end of the FollowRequest to grab. For leaders, we want the `:recipient` (the person I sent the request _to_). For followers, we want the `:sender` (the person who sent the request _to me_).
+
+#### pending
+
+```ruby
+has_many :pending, through: :pending_received_follow_requests, source: :sender
+```
+
+People who have sent me a follow request that I haven't responded to yet. We'll use this to display a notification count or a list of pending requests.
+
+#### feed — the through-through
+
+```ruby
+has_many :feed, through: :leaders, source: :own_photos
+```
+
+This is where it gets really exciting. We already have `has_many :leaders` which gives us all the users I follow. Now we go _through_ those leaders to get their `own_photos`. The chain is: User -> Leaders (Users) -> Own Photos (Photos).
+
+In plain English: "My feed is all the photos posted by people I follow." One line of code, and Rails handles the multi-table SQL join for us.
+
+#### discover — the through-through with distinct
+
+```ruby
+has_many :discover, -> { distinct }, through: :leaders, source: :liked_photos
+```
+
+Similar to feed, but instead of our leaders' _own_ photos, we want photos our leaders have _liked_. The chain is: User -> Leaders -> Liked Photos.
+
+The `-> { distinct }` scope is important here. Without it, if two of your leaders both liked the same photo, it would appear twice in your discover feed. The `distinct` ensures each photo appears only once.
+
+<div class="alert alert-info">
+
+Take a moment to appreciate what we just built. With a handful of association declarations, we can now write `user.feed` to get a personalized timeline and `user.discover` to get a recommendation feed. No raw SQL, no complex queries scattered through controllers — just clean, readable Ruby.
+</div>
+
+#### Other additions
+
+There are a few other things we added to the User model beyond the associations:
+
+```ruby
+attr_accessor :remove_profile_banner
+after_save :purge_profile_banner, if: :remove_profile_banner
+```
+
+This virtual attribute and callback let us remove a user's profile banner from a form checkbox. We'll use this in a later part when we build the profile edit page.
+
+```ruby
+scope :past_week, -> { where(created_at: 1.week.ago...) }
+scope :by_likes, -> { order(likes_count: :desc) }
+```
+
+Two useful scopes: `past_week` returns users who signed up in the last week, and `by_likes` orders users by their like count (most liked first). The `1.week.ago...` syntax is a Ruby beginless range — it means "from one week ago to now."
+
+```ruby
+def self.ransackable_attributes(auth_object = nil)
+  [ "username" ]
 end
 ```
-{: filename="app/models/application_record.rb" }
 
-Commit that change!
-
-## Scopes
-
-Are there any `.where` queries that you know you're going to be using over and over on any of your models? If so, there's a wonderful feature to encapsulate them and make them easy to re-use: [ActiveRecord scopes](https://guides.rubyonrails.org/active_record_querying.html#scopes).
-
-In Photogram, we might frequently want to order photos by newest first, or separate pinned photos from unpinned ones on a user's profile:
+This is required by the `ransack` gem we installed in Part 1. It whitelists which attributes can be searched. We only allow searching by `username` — we don't want people searching by email or other private fields.
 
 ```ruby
-current_user.own_photos.where(pinned: true)
-current_user.own_photos.where(pinned: false).order(created_at: :desc)
-```
-
-We can encapsulate these in scopes within our models. For `Photo`:
-
-```ruby{3-5}
-class Photo < ApplicationRecord
-  # ...
-  scope :latest, -> { order(created_at: :desc) }
-  scope :pinned, -> { where(pinned: true) }
-  scope :unpinned, -> { where(pinned: false) }
+def purge_profile_banner
+  profile_banner.purge_later
 end
 ```
-{: filename="app/models/photo.rb" }
 
-We have the `scope` method, the name for the scope (`:latest`, `:pinned`, `:unpinned`), and then a `Proc` defined with the syntax `-> {}`, which just contains our query (`.where`, `.order`) to apply to the model.
+This is the method called by the `after_save` callback above. It removes the profile banner image from Cloudinary in a background job.
 
-And then we can call them on any `ActiveRecord::Relation`s of photos, e.g.:
+Now would be a good time for a commit:
+
+```
+git add -A
+git commit -m "built out all associations, validations, scopes on User and Photo models"
+```
+
+## Run sample data
+
+Remember the sample data task from Part 1 that we couldn't run yet? Now that all five models are in place — User, Photo, Comment, Like, and FollowRequest — let's finally try it:
+
+```
+rake sample_data
+```
+
+This might take a minute or two since it's downloading avatar images from Cloudinary and creating a bunch of records. When it finishes, you should see output indicating that users, photos, follow requests, likes, and comments were all created successfully.
+
+If you get any errors, double-check that:
+1. Your `.env` file has valid Cloudinary credentials
+2. All five migrations have been run (`rake db:migrate`)
+3. Your models match the code shown above
+
+Commit:
+
+```
+git add -A
+git commit -m "verified sample data runs successfully"
+```
+
+## Explore the data
+
+Now let's verify that everything is wired up correctly. Start your server with `bin/dev` and visit `/rails/db` in your browser. You should see all of your tables listed. Click into each one and explore:
+
+- **Users**: You should see 10 users (Alice through Jack) with their usernames, emails, and counter columns populated.
+- **Photos**: 3 photos per user, 30 total, with captions and `owner_id` values pointing to users.
+- **Comments**: Comments on photos with `author_id` and `photo_id` values.
+- **Likes**: Records connecting fans to photos.
+- **FollowRequests**: A mix of pending and accepted follow requests.
+
+Now let's try the Rails console to see our associations in action:
+
+```
+rails console
+```
+
+Try these commands one at a time:
 
 ```ruby
-Photo.latest
-current_user.own_photos.pinned
-current_user.own_photos.unpinned
+alice = User.find_by(username: "alice")
+alice.own_photos.count
+alice.liked_photos.count
+alice.leaders.count
+alice.followers.count
+alice.feed.count
+alice.discover.count
+alice.pending.count
 ```
 
-And, if we are careful to write our scopes in such a way that they always return `ActiveRecord::Relation`s, then we can confidently chain them together:
+Each of these should return a number (not an error). If `alice.feed` returns photos, that means the full chain of associations is working: User -> Accepted Sent Follow Requests -> Recipients (Leaders) -> Own Photos (Feed). That's a three-table join, expressed as a single method call.
+
+You can also test the other direction:
 
 ```ruby
-current_user.own_photos.unpinned.latest
+photo = Photo.first
+photo.owner.username
+photo.fans.count
+photo.comments.count
 ```
 
-We should also add a scope to the `Comment` model for default ordering (oldest first, so conversations read naturally):
-
-```ruby{5}
-class Comment < ApplicationRecord
-  belongs_to :author, class_name: "User", counter_cache: true
-  belongs_to :photo, counter_cache: true
-
-  scope :default_order, -> { order(created_at: :asc) }
-
-  validates :body, presence: true
-end
-```
-{: filename="app/models/comment.rb" }
-
-Go ahead and add those scopes into the `Photo` and `Comment` models.
-
-Commit that addition!
-
-## `Enum` column type
-
-In `FollowRequest`, we have a column called `status` whose values will be one of only three possibilities: `"pending"`, `"rejected"`, or `"accepted"`. When you find yourself in a situation like this — a column whose possible values are a small fixed list — it's a good candidate to be an `ActiveRecord::Enum`, which will give us a bunch of handy methods for free.
-
-Let's make the column an enum (if you haven't already added it in the Validations section above):
-
-```ruby{5}
-class FollowRequest < ApplicationRecord
-  belongs_to :recipient, class_name: "User"
-  belongs_to :sender, class_name: "User"
-
-  enum :status, { pending: "pending", rejected: "rejected", accepted: "accepted" }
-end
-```
-{: filename="app/models/follow_request.rb" }
-
-We are `enum`erating the list of values (given as a `Hash`) that can be stored in the `status` column. That hash looks redundant, but it's just because people often use integers rather than strings. I prefer strings because they are more meaningful and easy to read.
-
-Now, we automatically get a bunch of handy methods for each status, or each of the keys in our hash. We get `?` and `!` instance methods:
+And check a follow request:
 
 ```ruby
-# assume follow_request is a valid and pending
-follow_request.accepted? # => false
-follow_request.accepted! # sets status to "accepted" and saves
+fr = FollowRequest.first
+fr.sender.username
+fr.recipient.username
+fr.status
+fr.accepted?
 ```
 
-We also get automatic positive and negative scopes:
+That `.accepted?` method came for free from our `enum` declaration.
 
-```ruby
-FollowRequest.accepted
-current_user.received_follow_requests.not_rejected
+Exit the console with `exit` when you're done exploring.
+
+## Recap
+
+In this lesson, we:
+
+1. Generated scaffolds for Comments, FollowRequests, and Likes
+2. Edited each migration to use proper foreign keys, constraints, and defaults
+3. Configured each model with `belongs_to` associations using `class_name:` when the association name differs from the model name
+4. Added `counter_cache: true` to keep count columns in sync automatically
+5. Used `enum :status` on FollowRequest to get free query methods and scopes
+6. Built `has_many` and `has_many :through` associations on User and Photo
+7. Created the `feed` and `discover` through-through associations — the crown jewels of our data model
+8. Added validations (both built-in `validates` and custom `validate`)
+9. Added scopes for reusable query logic
+10. Got `rake sample_data` running and verified everything in the console
+
+The data model is now complete. In the next parts, we'll turn our attention to the views and controllers — building out the actual pages that users interact with.
+
+Now would be a good time for a final commit and push:
+
+```
+git add -A
+git commit -m "completed Part 2: all models, associations, validations, and sample data"
+git push -u origin HEAD
 ```
 
-Exactly what we need!
-
-In fact, we can now replace the `Proc`s in the association accessors for our `User` model with these handy scopes:
-
-```ruby{4:(49-56),7:(53-60),8:(52-58)}
-class User < ApplicationRecord
-  # ...
-  has_many :sent_follow_requests, foreign_key: :sender_id, class_name: "FollowRequest"
-  has_many :accepted_sent_follow_requests, -> { accepted }, foreign_key: :sender_id, class_name: "FollowRequest"
-
-  has_many :received_follow_requests, foreign_key: :recipient_id, class_name: "FollowRequest"
-  has_many :accepted_received_follow_requests, -> { accepted }, foreign_key: :recipient_id, class_name: "FollowRequest"
-  has_many :pending_received_follow_requests, -> { pending }, foreign_key: :recipient_id, class_name: "FollowRequest"
-# ...
-```
-{: filename="app/models/user.rb" }
-
-And now, because `enum` defines the methods `FollowRequest.accepted` and `FollowRequest.pending` to return filtered lists of follow requests, we can use those methods here!
-
-## Sample data task
-
-At this point, we've done a lot of work! Generated user accounts and a CRUD interface for our domain, added business logic, while also keeping in mind considerations like database indexes and constraints. And we have yet to even start up our web server!
-
-Still, I usually do one more thing before I start working on the interface: write a `sample_data` rake task. It's _so_ helpful to have data to look at when starting to build out functionality and design the interface; and the data should be varied, there should be a significant amount of it, and it should be easy to reset it whenever things get into a weird state while I am experimenting.
-
-Writing a Ruby program to automate this is a huge productivity boost to the whole team, so it's worth doing it up front. The exercise of doing it also invariably helps shake out bugs in the associations and validations that I just wrote.
-
-Since we are using Active Storage for image uploads, the sample data task needs to attach images using Active Storage's `attach` method. Rather than any video content or written guide here, we've supplied you with an example sample data task in the `example_dev.rake` file in the `public/` folder.
-
-Take some time now to read through that file, and copy its contents _exactly_ in your `lib/tasks/dev.rake` file. If you set up your models, associations, and validations correctly, then copying the contents of `public/example_dev.rake` into `lib/tasks/dev.rake` should allow you to create varied sample data by running `rake sample_data` to continue working on the front end user interface in the subsequent lessons.
-
-<aside markdown="1">
-The sample data task uses Active Storage's `attach` method to associate images with records. For example, to attach an image to a photo:
-
-```ruby
-photo.image.attach(
-  io: URI.open(image_url),
-  filename: image_url.split("/").last,
-  content_type: "image/jpg"
-)
-```
-
-This is different from the old CarrierWave approach where you'd just set a string column. Active Storage handles the file storage and association behind the scenes.
-</aside>
-
-Really, please do spend 30 minutes or so reading through that file carefully and making sure you understand what's going on with sample data creation. And if the sample data task is failing for you, then debug the errors and fix whatever is wrong with your models, associations, and validations.
-
-Running `rake sample_data` at the terminal should now produce very helpful, varied data for our next task: building out the interface! At this point, we're basically done with the whole backend of our app, and now we need to work on the frontend.
-
-- Were you able to copy the `public/example_dev.rake` contents into your `lib/tasks/dev.rake` file and run `rake sample_data` without errors?
-- Yes!
-  - Great! Carry on!
-- Not yet.
-  - Please make sure it's working without errors before you proceed!
-{: .choose_best #sample_data title="Sample Data" points="1" answer="1" }
+---
 
 - Approximately how long (in minutes) did this lesson take you to complete?
 {: .free_text_number #time_taken title="Time taken" points="1" answer="any" }
@@ -871,610 +775,6 @@ Running `rake sample_data` at the terminal should now produce very helpful, vari
 <!--
 
 # List of project specs for AI assistant
-
-require "rails_helper"
-
-describe "/[USERNAME]/discover" do
-  it "can be visited", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    visit "/#{user.username}/discover"
-
-    expect(page.status_code).to be(200)
-  end
-
-  it "shows photos liked by people the current user follows", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    leader = User.create(username: "leader", email: "leader@example.com", password: "appdev")
-    owner = User.create(username: "owner", email: "owner@example.com", password: "appdev", private: false)
-    photo = create_photo(owner: owner, caption: "owner caption")
-    FollowRequest.create(sender_id: user.id, recipient_id: leader.id, status: "accepted")
-    Like.create(fan_id: leader.id, photo_id: photo.id)
-
-    visit "/#{user.username}/discover"
-
-    expect(page).to have_content(photo.caption)
-  end
-end
-
-def sign_in(user)
-  visit "/users/sign_in"
-
-  fill_in "Email", with: user.email
-  fill_in "Password", with: user.password
-  click_button "Sign in"
-end
-
-def create_photo(owner:, caption: "caption")
-  photo = Photo.new(caption: caption, owner_id: owner.id)
-  photo.image.attach(io: File.open(Rails.root.join("spec/support/test_image.jpeg")), filename: "test_image.jpeg", content_type: "image/jpeg")
-  photo.save!
-  photo
-end
-
-require "rails_helper"
-
-describe "/[USERNAME]/feed" do
-  it "can be visited", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    visit "/#{user.username}/feed"
-
-    expect(page.status_code).to be(200)
-  end
-
-  it "shows their leader's photos", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    leader = User.create(username: "leader", email: "leader@example.com", password: "appdev", private: false)
-    photo = create_photo(owner: leader, caption: "leader caption")
-    FollowRequest.create(sender_id: user.id, recipient_id: leader.id, status: "accepted")
-
-    visit "/#{user.username}/feed"
-
-    expect(page).to have_content(photo.caption)
-    expect(page).to have_css("img")
-  end
-
-  it "allows them to like their leader's photos", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    leader = User.create(username: "leader", email: "leader@example.com", password: "appdev", private: false)
-    photo = create_photo(owner: leader)
-    FollowRequest.create(sender_id: user.id, recipient_id: leader.id, status: "accepted")
-
-    visit "/#{user.username}/feed"
-
-    click_on "0 likes"
-
-    expect(page).to have_css("i.fa-solid.fa-heart")
-  end
-
-  it "allows them to un-like their leader's photos", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    leader = User.create(username: "leader", email: "leader@example.com", password: "appdev", private: false)
-    photo = create_photo(owner: leader)
-    FollowRequest.create(sender_id: user.id, recipient_id: leader.id, status: "accepted")
-    Like.create(fan_id: user.id, photo_id: photo.id)
-
-    visit "/#{user.username}/feed"
-
-    click_on "1 like"
-
-    expect(page).to have_css("i.fa-regular.fa-heart")
-  end
-
-  it "allows the user to add a comment on their leader's photos", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    leader = User.create(username: "leader", email: "leader@example.com", password: "appdev", private: false)
-    photo = create_photo(owner: leader)
-    FollowRequest.create(sender_id: user.id, recipient_id: leader.id, status: "accepted")
-
-    visit "/#{user.username}/feed"
-
-    fill_in "comment[body]", with: "New comment"
-    click_button "Create Comment"
-
-    expect(page).to have_content("New comment")
-  end
-
-  it "allows the user to delete their comment", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    leader = User.create(username: "leader", email: "leader@example.com", password: "appdev", private: false)
-    photo = create_photo(owner: leader)
-    FollowRequest.create(sender_id: user.id, recipient_id: leader.id, status: "accepted")
-    comment = Comment.create(body: "New comment", author_id: user.id, photo_id: photo.id)
-
-    visit "/#{user.username}/feed"
-
-    within("#comment_#{comment.id}") do
-      click_on "Delete"
-    end
-
-    expect(page).not_to have_content("New comment")
-  end
-
-  it "allows the user to edit their comment", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    leader = User.create(username: "leader", email: "leader@example.com", password: "appdev", private: false)
-    photo = create_photo(owner: leader)
-    FollowRequest.create(sender_id: user.id, recipient_id: leader.id, status: "accepted")
-    comment = Comment.create(body: "New comment", author_id: user.id, photo_id: photo.id)
-
-    visit "/#{user.username}/feed"
-
-    within("#comment_#{comment.id}") do
-      click_on "Edit"
-    end
-
-    fill_in "comment[body]", with: "Edited comment"
-    click_button "Update Comment"
-
-    expect(page).to have_content("Edited comment")
-  end
-end
-
-def sign_in(user)
-  visit "/users/sign_in"
-
-  fill_in "Email", with: user.email
-  fill_in "Password", with: user.password
-  click_button "Sign in"
-end
-
-def create_photo(owner:, caption: "caption")
-  photo = Photo.new(caption: caption, owner_id: owner.id)
-  photo.image.attach(io: File.open(Rails.root.join("spec/support/test_image.jpeg")), filename: "test_image.jpeg", content_type: "image/jpeg")
-  photo.save!
-  photo
-end
-
-require "rails_helper"
-
-describe "/" do
-  it "can be visited", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    visit "/"
-
-    expect(page.status_code).to be(200)
-  end
-
-  it "has a bootstrap navbar", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    visit "/"
-
-    expect(page).to have_tag("nav", with: { class: "navbar" })
-  end
-
-  it "has a Settings link for the signed in user", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    visit "/"
-
-    expect(page).to have_link("Settings", href: "/users/edit")
-  end
-
-  it "does not have a sign in link if the user is already signed in", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    visit "/"
-
-    expect(page).to_not have_link("Sign in", href: "/users/sign_in")
-  end
-
-  it "has a link, 'Feed', that navigates to the 'Feed' page", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    visit "/"
-
-    click_on "Feed"
-
-    expect(page).to have_current_path("/#{user.username}/feed")
-  end
-
-  it "has a link, 'Discover', that navigates to the 'Discover' page", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    visit "/"
-
-    click_on "Discover"
-
-    expect(page).to have_current_path("/#{user.username}/discover")
-  end
-
-  it "has a link, 'Go to profile', that navigates to the profile page", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    visit "/"
-
-    click_on "Go to profile"
-
-    expect(page).to have_current_path("/#{user.username}")
-  end
-
-  it "has an 'Add photo' button", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    visit "/"
-
-    expect(page).to have_button("Add photo")
-  end
-end
-
-def sign_in(user)
-  visit "/users/sign_in"
-
-  fill_in "Email", with: user.email
-  fill_in "Password", with: user.password
-  click_button "Sign in"
-end
-
-require "rails_helper"
-
-describe "/photos/new" do
-  it "has a form to add a new photo", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    visit "/photos/new"
-
-    expect(page).to have_form("/photos", :post)
-  end
-
-  it "does not allow the user to add a new photo without a caption", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    visit "/photos/new"
-
-    all("input[type='file']").last.attach_file("#{Rails.root}/spec/support/test_image.jpeg")
-    all("input[type='submit']").last.click
-
-    expect(page).to have_content("Caption can't be blank")
-  end
-
-  it "allows the user to add a new photo", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    visit "/photos/new"
-
-    all("input[type='file']").last.attach_file("#{Rails.root}/spec/support/test_image.jpeg")
-    all("textarea").last.fill_in(with: "caption")
-    all("input[type='submit']").last.click
-
-    expect(page).to have_content("Photo was successfully created")
-  end
-
-  it "redirects to the photo details page after creating a new photo", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    visit "/photos/new"
-
-    all("input[type='file']").last.attach_file("#{Rails.root}/spec/support/test_image.jpeg")
-    all("textarea").last.fill_in(with: "caption")
-    all("input[type='submit']").last.click
-
-    expect(page).to have_current_path("/photos/#{Photo.last.id}")
-  end
-end
-
-describe "/photos/[ID]" do
-  it "displays the photo and caption", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    photo = create_photo(owner: user, caption: "caption")
-
-    visit "/photos/#{photo.id}"
-
-    expect(page).to have_css("img")
-    expect(page).to have_content(photo.caption)
-  end
-
-  it "allows the user to edit the photo", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    photo = create_photo(owner: user, caption: "caption")
-
-    visit "/photos/#{photo.id}"
-
-    click_on "Edit"
-
-    all("textarea").last.fill_in(with: "new caption")
-    all("input[type='submit']").last.click
-
-    expect(page).to have_content("new caption")
-  end
-end
-
-def sign_in(user)
-  visit "/users/sign_in"
-
-  fill_in "Email", with: user.email
-  fill_in "Password", with: user.password
-  click_button "Sign in"
-end
-
-def create_photo(owner:, caption: "caption")
-  photo = Photo.new(caption: caption, owner_id: owner.id)
-  photo.image.attach(io: File.open(Rails.root.join("spec/support/test_image.jpeg")), filename: "test_image.jpeg", content_type: "image/jpeg")
-  photo.save!
-  photo
-end
-
-require "rails_helper"
-
-describe "/[USERNAME]" do
-  it "can be visited", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    visit "/#{user.username}"
-
-    expect(page.status_code).to be(200)
-  end
-
-  it "has a Posts tab", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    visit "/#{user.username}"
-
-    expect(page).to have_button("Posts")
-  end
-
-  it "has a Likes tab", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    visit "/#{user.username}"
-
-    expect(page).to have_button("Likes")
-  end
-
-  it "displays each of the user's photos", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    photo = create_photo(owner: user, caption: "caption")
-
-    visit "/#{user.username}"
-
-    expect(page).to have_css("img")
-    expect(page).to have_content(photo.caption)
-  end
-
-  it "shows the comments on the user's photos", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    photo = create_photo(owner: user, caption: "caption")
-    comment = Comment.create(body: "comment body", author_id: user.id, photo_id: photo.id)
-
-    visit "/#{user.username}"
-
-    expect(page).to have_content(comment.body)
-  end
-
-  it "allows the user to delete their photo", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    photo = create_photo(owner: user, caption: "caption")
-
-    visit "/#{user.username}"
-
-    click_on "Delete"
-
-    expect(page).not_to have_content(photo.caption)
-  end
-
-  it "shows a list of followers on the user profile", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    other_user = User.create(username: "other_user", email: "other_user@example.com", password: "appdev")
-    FollowRequest.create(sender_id: other_user.id, recipient_id: user.id, status: "accepted")
-
-    visit "/#{user.username}"
-
-    click_on "followers"
-
-    expect(page).to have_content(other_user.username)
-  end
-
-  it "shows a list of leaders on the user profile", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    other_user = User.create(username: "other_user", email: "other_user@example.com", password: "appdev")
-    FollowRequest.create(sender_id: user.id, recipient_id: other_user.id, status: "accepted")
-
-    visit "/#{user.username}"
-
-    click_on "following"
-
-    expect(page).to have_content(other_user.username)
-  end
-
-  it "shows a 'Following' button for leaders", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    other_user = User.create(username: "other_user", email: "other_user@example.com", password: "appdev")
-    FollowRequest.create(sender_id: user.id, recipient_id: other_user.id, status: "accepted")
-
-    visit "/#{other_user.username}"
-
-    expect(page).to have_button("Following")
-  end
-
-  it "shows pending follow requests for private accounts", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    private_user = User.create(username: "private_user", email: "private_user@example.com", password: "appdev", private: true)
-
-    visit "/#{private_user.username}"
-
-    click_on "Follow"
-
-    expect(page).to have_button("Requested")
-  end
-
-  it "allows a user to unfollow another user", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    other_user = User.create(username: "other_user", email: "other_user@example.com", password: "appdev")
-    FollowRequest.create(sender_id: user.id, recipient_id: other_user.id, status: "accepted")
-
-    visit "/#{other_user.username}"
-
-    click_on "Following"
-
-    expect(page).to have_button("Follow")
-  end
-
-  it "allows a user to cancel pending follow request", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    private_user = User.create(username: "private_user", email: "private_user@example.com", password: "appdev", private: true)
-    FollowRequest.create(sender_id: user.id, recipient_id: private_user.id, status: "pending")
-
-    visit "/#{private_user.username}"
-
-    click_on "Requested"
-
-    expect(page).to have_button("Follow")
-  end
-
-  it "allows a user to accept a follow request", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    other_user = User.create(username: "other_user", email: "other_user@example.com", password: "appdev")
-    FollowRequest.create(sender_id: other_user.id, recipient_id: user.id, status: "pending")
-
-    visit "/#{user.username}/pending"
-
-    click_on "Accept"
-
-    expect(page).not_to have_content(other_user.username)
-  end
-
-  it "allows a user to reject a follow request", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-    sign_in(user)
-
-    other_user = User.create(username: "other_user", email: "other_user@example.com", password: "appdev")
-    FollowRequest.create(sender_id: other_user.id, recipient_id: user.id, status: "pending")
-
-    visit "/#{user.username}/pending"
-
-    click_on "Reject"
-
-    expect(page).not_to have_content(other_user.username)
-  end
-end
-
-def sign_in(user)
-  visit "/users/sign_in"
-
-  fill_in "Email", with: user.email
-  fill_in "Password", with: user.password
-  click_button "Sign in"
-end
-
-def create_photo(owner:, caption: "caption")
-  photo = Photo.new(caption: caption, owner_id: owner.id)
-  photo.image.attach(io: File.open(Rails.root.join("spec/support/test_image.jpeg")), filename: "test_image.jpeg", content_type: "image/jpeg")
-  photo.save!
-  photo
-end
-
-require "rails_helper"
-
-describe "User authentication" do
-  it "displays a banner to sign in when trying to visit the homepage", points: 1 do
-    visit "/"
-
-    expect(page).to have_content("You need to sign in or sign up before continuing")
-  end
-
-  it "sends the user to the sign in page when trying to visit the homepage", points: 1 do
-    visit "/"
-
-    expect(page).to have_current_path("/users/sign_in")
-  end
-
-  it "allows new user sign ups", points: 1 do
-    visit "/users/sign_up"
-
-    fill_in "Email", with: "alice@example.com"
-    fill_in "Password", with: "appdev"
-    fill_in "Password confirmation", with: "appdev"
-    fill_in "Username", with: "alice"
-    click_button "Sign up"
-
-    expect(page).to have_content("Welcome! You have signed up successfully")
-  end
-
-  it "allows an existing user to sign in", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-
-    visit "/users/sign_in"
-
-    fill_in "Email", with: user.email
-    fill_in "Password", with: user.password
-    click_button "Sign in"
-
-    expect(page).to have_content("Signed in successfully")
-  end
-
-  it "allows a user to sign out", points: 1 do
-    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
-
-    visit "/users/sign_in"
-
-    fill_in "Email", with: user.email
-    fill_in "Password", with: user.password
-    click_button "Sign in"
-
-    click_on user.username
-    click_on "Sign out"
-
-    expect(page).to have_current_path("/users/sign_in")
-  end
-end
 
 require "rails_helper"
 
@@ -1584,6 +884,61 @@ RSpec.describe User, type: :model do
 
   describe "has a has_many (many-to_many) association defined called 'discover' through 'leaders' and source 'liked_photos'", points: 1 do
     it { should have_many(:discover).through(:leaders).source(:liked_photos) }
+  end
+end
+
+require "rails_helper"
+
+describe "User authentication" do
+  it "displays a banner to sign in when trying to visit the homepage", points: 1 do
+    visit "/"
+
+    expect(page).to have_content("You need to sign in or sign up before continuing")
+  end
+
+  it "sends the user to the sign in page when trying to visit the homepage", points: 1 do
+    visit "/"
+
+    expect(page).to have_current_path("/users/sign_in")
+  end
+
+  it "allows new user sign ups", points: 1 do
+    visit "/users/sign_up"
+
+    fill_in "Email", with: "alice@example.com"
+    fill_in "Password", with: "appdev"
+    fill_in "Password confirmation", with: "appdev"
+    fill_in "Username", with: "alice"
+    click_button "Sign up"
+
+    expect(page).to have_content("Welcome! You have signed up successfully")
+  end
+
+  it "allows an existing user to sign in", points: 1 do
+    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
+
+    visit "/users/sign_in"
+
+    fill_in "Email", with: user.email
+    fill_in "Password", with: user.password
+    click_button "Sign in"
+
+    expect(page).to have_content("Signed in successfully")
+  end
+
+  it "allows a user to sign out", points: 1 do
+    user = User.create(username: "alice", email: "alice@example.com", password: "appdev")
+
+    visit "/users/sign_in"
+
+    fill_in "Email", with: user.email
+    fill_in "Password", with: user.password
+    click_button "Sign in"
+
+    click_on user.username
+    click_on "Sign out"
+
+    expect(page).to have_current_path("/users/sign_in")
   end
 end
 
