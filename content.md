@@ -1,4 +1,4 @@
-# Photogram Industrial: Associations, validations, and sample data
+# Photogram Industrial: Scaffolds, associations, and validations
 
 ## Getting started
 
