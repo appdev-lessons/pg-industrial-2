@@ -1,4 +1,4 @@
-# Photogram Industrial Part 2: Associations, validations, and sample data
+# Photogram Industrial: Associations, validations, and sample data
 
 ## Walkthrough video
 
