@@ -734,6 +734,10 @@ The data model is now complete. In the next lessons, we'll turn our attention to
 
 If anything is missing, or you hit a bug, try to resolve things and commit and push before you move on from here.
 
+One last thing:
+
+Now that our backend is setup, you should be able to `rspec` (and `grade`) to start getting some passing specs (and start gaining some points for this series).
+
 ---
 
 - Approximately how long (in minutes) did this lesson take you to complete?
