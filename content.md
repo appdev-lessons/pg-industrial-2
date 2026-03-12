@@ -261,7 +261,7 @@ git commit -m "Edited FollowRequests migration and configured FollowRequest mode
 git push
 ```
 
-[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/)
+[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/d4f8fb0a3e0af144cf01a11ba163826b9f7f2b68)
 
 ## Generate Likes scaffold
 
