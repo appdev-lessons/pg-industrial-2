@@ -31,7 +31,10 @@ Let's commit the generated files before we start editing:
 ```
 git add -A
 git commit -m "Generated Comments scaffold"
+git push --set-upstream origin models-and-associations
 ```
+
+That last command publishes the branch to GitHub. From now on, you can push with just `git push` after each commit.
 
 ### Edit the Comments migration
 
@@ -90,6 +93,7 @@ And commit:
 ```
 git add -A
 git commit -m "Edited Comments migration and configured Comment model"
+git push
 ```
 
 ## Generate FollowRequests scaffold
@@ -107,6 +111,7 @@ Commit the generated files:
 ```
 git add -A
 git commit -m "Generated FollowRequests scaffold"
+git push
 ```
 
 ### Edit the FollowRequests migration
@@ -228,6 +233,7 @@ And commit:
 ```
 git add -A
 git commit -m "Edited FollowRequests migration and configured FollowRequest model"
+git push
 ```
 
 ## Generate Likes scaffold
@@ -245,6 +251,7 @@ Commit the generated files:
 ```
 git add -A
 git commit -m "Generated Likes scaffold"
+git push
 ```
 
 ### Edit the Likes migration
@@ -290,6 +297,7 @@ And commit:
 ```
 git add -A
 git commit -m "Edited Likes migration and configured Like model"
+git push
 ```
 
 ## Building out the associations
@@ -556,6 +564,7 @@ Now would be a good time for a commit:
 ```
 git add -A
 git commit -m "Built out all associations, validations, scopes on User and Photo models"
+git push
 ```
 
 ## Run sample data
@@ -589,6 +598,7 @@ Commit:
 ```
 git add -A
 git commit -m "Verified sample data runs successfully"
+git push
 ```
 
 ## Explore the data
@@ -667,7 +677,7 @@ Now would be a good time for a final commit and push:
 ```
 git add -A
 git commit -m "Completed Part 2: all models, associations, validations, and sample data"
-git push -u origin HEAD
+git push
 ```
 
 ---
