@@ -202,7 +202,7 @@ has_many :accepted_sent_follow_requests, -> { accepted }, foreign_key: :sender_i
 
 The `-> { accepted }` lambda works because `enum` defined that scope for us: 
 
-```ruby{1:(61-80)}
+```ruby{1:(59-78)}
 enum :status, { pending: "pending", rejected: "rejected", accepted: "accepted" }
 ```
 {: filename="app/models/follow_request.rb" }
