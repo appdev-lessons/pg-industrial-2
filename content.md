@@ -630,14 +630,14 @@ git push
 
 The starting point includes a pre-written `sample_data` rake task at `lib/tasks/dev.rake`. You don't need to write it; it's already done. Here's what it does at a high level:
 
-- Creates 10 users (Alice through Jack) with emails like `alice@example.com` and the password `appdev`
-- Makes some users private (Bob, Carol, Eve, Ivy)
-- Attaches specific avatar images from Cloudinary to each user
-- Gives Alice a profile banner image
-- Creates follow relationships between users (some accepted, some pending)
-- Creates 3 photos per user with philosophical captions
-- Creates likes and comments from followers
-- Uses `User.skip_callback(:create, :before, :set_default_avatar)` to bypass the default avatar callback, since it manually attaches specific avatars for each user
+- Creates 10 users (Alice through Jack) with emails like `alice@example.com` and the password `appdev`.
+- Makes some users private (Bob, Carol, Eve, Ivy).
+- Attaches specific avatar images from Cloudinary to each user.
+- Gives Alice a profile banner image.
+- Creates follow relationships between users (some accepted, some pending).
+- Creates 3 photos per user with philosophical captions.
+- Creates likes and comments from followers.
+- Uses `User.skip_callback(:create, :before, :set_default_avatar)` to bypass the default avatar callback, since it manually attaches specific avatars for each user.
 
 Now that all five models are in place (User, Photo, Comment, Like, and FollowRequest), let's finally try it:
 
@@ -719,16 +719,16 @@ Exit the console with `exit` when you're done exploring.
 
 In this lesson, we:
 
-1. Generated scaffolds for Comments, FollowRequests, and Likes
-2. Edited each migration to use proper foreign keys, constraints, and defaults
-3. Configured each model with `belongs_to` associations using `class_name:` when the association name differs from the model name
-4. Added `counter_cache: true` to keep count columns in sync automatically
-5. Used `enum :status` on FollowRequest to get free query methods and scopes
-6. Built `has_many` and `has_many :through` associations on User and Photo
-7. Created the `feed` and `discover` through-through associations, the crown jewels of our data model
-8. Added validations (both built-in `validates` and custom `validate`)
-9. Added scopes for reusable query logic
-10. Got `rake sample_data` running and verified everything in the console
+1. Generated scaffolds for Comments, FollowRequests, and Likes.
+2. Edited each migration to use proper foreign keys, constraints, and defaults.
+3. Configured each model with `belongs_to` associations using `class_name:` when the association name differs from the model name.
+4. Added `counter_cache: true` to keep count columns in sync automatically.
+5. Used `enum :status` on FollowRequest to get free query methods and scopes.
+6. Built `has_many` and `has_many :through` associations on User and Photo.
+7. Created the `feed` and `discover` through-through associations, the crown jewels of our data model.
+8. Added validations (both built-in `validates` and custom `validate`).
+9. Added scopes for reusable query logic.
+10. Got `rake sample_data` running and verified everything in the console.
 
 The data model is now complete. In the next lessons, we'll turn our attention to the views and controllers, building out the actual pages that users interact with.
 
