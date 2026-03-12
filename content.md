@@ -128,18 +128,18 @@ git commit -m "Generated FollowRequests scaffold"
 git push
 ```
 
-[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/)
+[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/8390f1154d5e84be6464862d511168a1b270ff97)
 
 ### Edit the FollowRequests migration
 
 Open the migration and make these changes:
 
-```ruby{5:(42-73),6:(40-71),7:(21-41)}
+```ruby{4:(58-77),5:(55-74),6:(23-42)}
 class CreateFollowRequests < ActiveRecord::Migration[8.0]
   def change
     create_table :follow_requests do |t|
-      t.references :recipient, null: false, foreign_key: { to_table: :users }, index: true
-      t.references :sender, null: false, foreign_key: { to_table: :users }, index: true
+      t.references :recipient, null: false, foreign_key: { to_table: :users }
+      t.references :sender, null: false, foreign_key: { to_table: :users }
       t.string :status, default: "pending"
 
       t.timestamps
