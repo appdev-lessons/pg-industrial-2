@@ -331,7 +331,7 @@ git commit -m "Edited Likes migration and configured Like model"
 git push
 ```
 
-[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/)
+[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/f8fd53fb3c97ab64ad173682e2c370cd6fa352c4)
 
 ## Building out the associations
 
