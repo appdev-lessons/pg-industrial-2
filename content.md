@@ -45,7 +45,7 @@ git push --set-upstream origin models-and-associations
 
 That last command publishes the branch to GitHub. From now on, you can push with just `git push` after each commit.
 
-[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/)
+[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/049f60b79512216617f31c3d4c41c242420168a6)
 
 ### Edit the Comments migration
 
