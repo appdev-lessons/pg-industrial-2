@@ -565,6 +565,8 @@ class User < ApplicationRecord
 
   attr_accessor :remove_profile_banner
   after_save :purge_profile_banner, if: :remove_profile_banner
+
+  before_create :set_default_avatar
   # ...
 ```
 {: filename="app/models/user.rb" }
