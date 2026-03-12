@@ -614,7 +614,9 @@ end
 
 This is required by the `ransack` gem we installed previously. It explicitly allows which attributes can be searched. We only allow searching by `username`, since we don't want people searching by email or other private fields.
 
-Now would be a good time for a commit:
+That was a lot of additions to the User model! Ask any questions now, but we'll also refer back to these methods frequently when we start building things out on the frontend
+
+Let's make a commit:
 
 ```
 git add -A
@@ -650,15 +652,7 @@ If you get any errors, double-check that:
 2. All five migrations have been run (`rails db:migrate`)
 3. Your models match the code shown above
 
-Commit:
-
-```
-git add -A
-git commit -m "Verified sample data runs successfully"
-git push
-```
-
-[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/)
+If anything is missing, or you hit a bug, try to resolve things and commit and push before you move on from here.
 
 ## Explore the data
 
@@ -731,15 +725,7 @@ In this lesson, we:
 
 The data model is now complete. In the next lessons, we'll turn our attention to the views and controllers, building out the actual pages that users interact with.
 
-Now would be a good time for a final commit and push:
-
-```
-git add -A
-git commit -m "Completed all models, associations, validations, and sample data"
-git push
-```
-
-[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/)
+If anything is missing, or you hit a bug, try to resolve things and commit and push before you move on from here.
 
 ---
 
