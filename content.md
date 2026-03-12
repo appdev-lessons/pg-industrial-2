@@ -375,7 +375,7 @@ The User model is where all the associations come together. We're going to build
 
 First, let's add the `has_many` for comments. Open `app/models/user.rb`:
 
-```ruby{3}
+```ruby{4}
   # ...
   has_one_attached :profile_banner, dependent: :purge_later
 
@@ -390,7 +390,7 @@ We need `foreign_key: :author_id` because the `comments` table has a column call
 
 Next, let's add the follow request associations, both sent and received:
 
-```ruby{3,5,7,9,11}
+```ruby{4,6,8,10,12}
   # ...
   has_many :comments, foreign_key: :author_id, dependent: :destroy
 
