@@ -161,11 +161,11 @@ This model has some interesting features. Let's walk through each addition.
 
 First, update the `belongs_to` associations to specify the User class:
 
-```ruby{2-3}
+```ruby{2:(24-43),3:(21-40)}
 class FollowRequest < ApplicationRecord
   belongs_to :recipient, class_name: "User"
   belongs_to :sender, class_name: "User"
-  # ...
+end
 ```
 {: filename="app/models/follow_request.rb" }
 
