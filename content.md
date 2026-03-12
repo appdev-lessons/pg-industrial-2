@@ -597,15 +597,13 @@ class User < ApplicationRecord
 
 Two useful scopes: `past_week` returns users who signed up in the last week, and `by_likes` orders users by their like count (most liked first). The `1.week.ago...` syntax is a Ruby beginless range. It means "from one week ago to now."
 
-```ruby{10-12}
+```ruby{8-10}
 # ...
 class User < ApplicationRecord
   # ...
-  scope :by_likes, -> { order(likes_count: :desc) }
-
-  before_create :set_default_avatar
-
-  # ...
+  def purge_profile_banner
+    profile_banner.purge_later
+  end
 
   def self.ransackable_attributes(auth_object = nil)
     [ "username" ]
