@@ -175,28 +175,37 @@ Both `recipient` and `sender` point to the `User` model, so we need `class_name:
 
 Add the enum declaration for the status column:
 
-```ruby{3}
-  # ...
+```ruby{5}
+class FollowRequest < ApplicationRecord
+  belongs_to :recipient, class_name: "User"
   belongs_to :sender, class_name: "User"
 
   enum :status, { pending: "pending", rejected: "rejected", accepted: "accepted" }
-  # ...
+end
 ```
 {: filename="app/models/follow_request.rb" }
 
-This is one of Rails' most powerful features. An `enum` declaration on a string column does several things automatically:
+An `enum` declaration on a string column does several things automatically:
 
 1. **Query methods**: You can call `follow_request.pending?`, `follow_request.accepted?`, or `follow_request.rejected?` to check the status.
 2. **Update methods**: You can call `follow_request.accepted!` to change the status to "accepted" and save the record in one step.
-3. **Scopes**: You get `FollowRequest.pending`, `FollowRequest.accepted`, and `FollowRequest.rejected` . These are scopes that return all records with that status.
+3. **Scopes**: You get `FollowRequest.pending`, `FollowRequest.accepted`, and `FollowRequest.rejected`. These are scopes that return all records with that status.
 
 That last point is particularly important. Later, when we build associations on the User model, we'll use these enum scopes to filter follow requests:
 
-```ruby
+```ruby{1:(42-56)}
 has_many :accepted_sent_follow_requests, -> { accepted }, foreign_key: :sender_id, class_name: "FollowRequest"
 ```
+{: filename="app/models/user.rb}
 
-The `-> { accepted }` lambda works because `enum` defined that scope for us. We'll get to this soon.
+The `-> { accepted }` lambda works because `enum` defined that scope for us: 
+
+```ruby{1:(61-80)}
+  enum :status, { pending: "pending", rejected: "rejected", accepted: "accepted" }
+```
+{: filename="app/models/follow_request.rb}
+
+We'll get to this soon.
 
 ### Scoped uniqueness validation
 
