@@ -343,7 +343,9 @@ Let's build them up step by step, starting with the Photo model and then the Use
 
 Open `app/models/photo.rb`. Right now it has a `belongs_to :owner` and some validations. Add the `has_many` associations after the `belongs_to`:
 
-```ruby{4,6,8}
+```ruby{6,8,10}
+# ...
+class Photo < ApplicationRecord
   # ...
   belongs_to :owner, class_name: "User", counter_cache: true
 
@@ -375,7 +377,9 @@ The User model is where all the associations come together. We're going to build
 
 First, let's add the `has_many` for comments. Open `app/models/user.rb`:
 
-```ruby{4}
+```ruby{6}
+# ...
+class User < ApplicationRecord
   # ...
   has_one_attached :profile_banner, dependent: :purge_later
 
@@ -390,7 +394,9 @@ We need `foreign_key: :author_id` because the `comments` table has a column call
 
 Next, let's add the follow request associations, both sent and received:
 
-```ruby{4,6,8,10,12}
+```ruby{6,8,10,12,14}
+# ...
+class User < ApplicationRecord
   # ...
   has_many :comments, foreign_key: :author_id, dependent: :destroy
 
@@ -417,13 +423,15 @@ This is a big chunk, so let's unpack it:
 - `has_many :accepted_received_follow_requests, -> { accepted }` : only the accepted ones among received requests.
 - `has_many :pending_received_follow_requests, -> { pending }` : only the pending ones. We'll use this to show a user their pending follow requests that need action.
 
-<aside markdown="1">
+<aside>
 Why do we have `dependent: :destroy` on `sent_follow_requests` and `received_follow_requests` but not on the scoped versions (`accepted_sent_follow_requests`, etc.)? Because the scoped versions are just filtered views of the same underlying records. If we put `dependent: :destroy` on those too, Rails would try to destroy the same records multiple times. We only need it on the "base" associations.
 </aside>
 
 Now let's add the likes association:
 
-```ruby{4}
+```ruby{6}
+# ...
+class User < ApplicationRecord
   # ...
   has_many :pending_received_follow_requests, -> { pending }, foreign_key: :recipient_id, class_name: "FollowRequest"
 
@@ -446,7 +454,9 @@ Let's walk through each of the new `has_many :through` associations and the othe
 
 Add the liked_photos association:
 
-```ruby{3}
+```ruby{6}
+# ...
+class User < ApplicationRecord
   # ...
   has_many :own_photos, foreign_key: :owner_id, class_name: "Photo", dependent: :destroy
 
@@ -461,7 +471,9 @@ Add the liked_photos association:
 
 Add the leaders and followers associations:
 
-```ruby{3,5}
+```ruby{6,8}
+# ...
+class User < ApplicationRecord
   # ...
   has_many :liked_photos, through: :likes, source: :photo
 
@@ -483,7 +495,9 @@ The `source:` option tells Rails which end of the FollowRequest to grab. For lea
 
 Add the pending association:
 
-```ruby{3}
+```ruby{6}
+# ...
+class User < ApplicationRecord
   # ...
   has_many :followers, through: :accepted_received_follow_requests, source: :sender
 
@@ -498,7 +512,9 @@ People who have sent me a follow request that I haven't responded to yet. We'll 
 
 Add the feed association:
 
-```ruby{3}
+```ruby{6}
+# ...
+class User < ApplicationRecord
   # ...
   has_many :pending, through: :pending_received_follow_requests, source: :sender
 
@@ -515,7 +531,9 @@ In plain English: "My feed is all the photos posted by people I follow." One lin
 
 Add the discover association:
 
-```ruby{3}
+```ruby{6}
+# ...
+class User < ApplicationRecord
   # ...
   has_many :feed, through: :leaders, source: :own_photos
 
@@ -539,7 +557,9 @@ Take a moment to appreciate what we just built. With a handful of association de
 
 There are a few other things we added to the User model beyond the associations:
 
-```ruby{3-4}
+```ruby{6-7}
+# ...
+class User < ApplicationRecord
   # ...
   validates :website, url: { allow_blank: true }
 
@@ -551,12 +571,13 @@ There are a few other things we added to the User model beyond the associations:
 
 This virtual attribute and callback let us remove a user's profile banner from a form checkbox. We'll use this in a later lesson when we build the profile edit page.
 
-```ruby{3,5}
+```ruby{6,7}
+# ...
+class User < ApplicationRecord
   # ...
   after_save :purge_profile_banner, if: :remove_profile_banner
 
   scope :past_week, -> { where(created_at: 1.week.ago...) }
-
   scope :by_likes, -> { order(likes_count: :desc) }
   # ...
 ```
@@ -564,23 +585,31 @@ This virtual attribute and callback let us remove a user's profile banner from a
 
 Two useful scopes: `past_week` returns users who signed up in the last week, and `by_likes` orders users by their like count (most liked first). The `1.week.ago...` syntax is a Ruby beginless range. It means "from one week ago to now."
 
-```ruby{4-6}
+```ruby{10-12}
+# ...
+class User < ApplicationRecord
   # ...
   scope :by_likes, -> { order(likes_count: :desc) }
 
   before_create :set_default_avatar
 
+  # ...
+
   def self.ransackable_attributes(auth_object = nil)
     [ "username" ]
   end
-  # ...
+end
 ```
 {: filename="app/models/user.rb" }
 
-This is required by the `ransack` gem we installed previously. It whitelists which attributes can be searched. We only allow searching by `username`, since we don't want people searching by email or other private fields.
+This is required by the `ransack` gem we installed previously. It explicitly allows which attributes can be searched. We only allow searching by `username`, since we don't want people searching by email or other private fields.
 
-```ruby{3-5}
+```ruby{8-10}
+# ...
+class User < ApplicationRecord
   # ...
+  def self.ransackable_attributes(auth_object = nil)
+    [ "username" ]
   end
 
   def purge_profile_banner
