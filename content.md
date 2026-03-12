@@ -362,7 +362,7 @@ The new lines are:
 
 - `has_many :comments, dependent: :destroy` : a photo has many comments. When a photo is deleted, its comments are deleted too.
 - `has_many :likes, dependent: :destroy` : same idea for likes.
-- `has_many :fans, through: :likes` : this is a **has_many :through** association. It says: "A photo has many fans, _through_ its likes." Rails will follow the chain: Photo -> Likes -> Fan (User). This lets us write `photo.fans` to get all the users who liked a given photo, with no manual joins required.
+- `has_many :fans, through: :likes` : this is a **has_many :through** association. It says: "A photo has many fans, _through_ its likes." Rails will follow the chain: Photo → Likes → Fan (User). This lets us write `photo.fans` to get all the users who liked a given photo, with no manual joins required.
 
 <div class="alert alert-info">
 
@@ -455,7 +455,7 @@ Add the liked_photos association:
 ```
 {: filename="app/models/user.rb" }
 
-"A user has many liked photos, through their likes." Rails follows the chain: User -> Likes -> Photo. The `source: :photo` tells Rails which association on the `Like` model to follow (since `Like` has `belongs_to :photo`). Now we can write `user.liked_photos` to get all the photos a user has liked.
+"A user has many liked photos, through their likes." Rails follows the chain: User → Likes → Photo. The `source: :photo` tells Rails which association on the `Like` model to follow (since `Like` has `belongs_to :photo`). Now we can write `user.liked_photos` to get all the photos a user has liked.
 
 #### leaders and followers
 
@@ -474,8 +474,8 @@ Add the leaders and followers associations:
 
 These are the core social graph associations:
 
-- **Leaders**: People I follow (and who accepted my request). Chain: User -> Accepted Sent Follow Requests -> Recipient (User).
-- **Followers**: People who follow me (whose requests I accepted). Chain: User -> Accepted Received Follow Requests -> Sender (User).
+- **Leaders**: People I follow (and who accepted my request). Chain: User → Accepted Sent Follow Requests → Recipient (User).
+- **Followers**: People who follow me (whose requests I accepted). Chain: User → Accepted Received Follow Requests → Sender (User).
 
 The `source:` option tells Rails which end of the FollowRequest to grab. For leaders, we want the `:recipient` (the person I sent the request _to_). For followers, we want the `:sender` (the person who sent the request _to me_).
 
@@ -507,7 +507,7 @@ Add the feed association:
 ```
 {: filename="app/models/user.rb" }
 
-This is where it gets really exciting. We already have `has_many :leaders` which gives us all the users I follow. Now we go _through_ those leaders to get their `own_photos`. The chain is: User -> Leaders (Users) -> Own Photos (Photos).
+This is where it gets really exciting. We already have `has_many :leaders` which gives us all the users I follow. Now we go _through_ those leaders to get their `own_photos`. The chain is: User → Leaders (Users) → Own Photos (Photos).
 
 In plain English: "My feed is all the photos posted by people I follow." One line of code, and Rails handles the multi-table SQL join for us.
 
@@ -526,7 +526,7 @@ Add the discover association:
 ```
 {: filename="app/models/user.rb" }
 
-Similar to feed, but instead of our leaders' _own_ photos, we want photos our leaders have _liked_. The chain is: User -> Leaders -> Liked Photos.
+Similar to feed, but instead of our leaders' _own_ photos, we want photos our leaders have _liked_. The chain is: User → Leaders → Liked Photos.
 
 The `-> { distinct }` scope is important here. Without it, if two of your leaders both liked the same photo, it would appear twice in your discover feed. The `distinct` ensures each photo appears only once.
 
@@ -667,7 +667,7 @@ alice.discover.count
 alice.pending.count
 ```
 
-Each of these should return a number (not an error). If `alice.feed` returns photos, that means the full chain of associations is working: User -> Accepted Sent Follow Requests -> Recipients (Leaders) -> Own Photos (Feed). That's a three-table join, expressed as a single method call.
+Each of these should return a number (not an error). If `alice.feed` returns photos, that means the full chain of associations is working: User → Accepted Sent Follow Requests → Recipients (Leaders) → Own Photos (Feed). That's a three-table join, expressed as a single method call.
 
 You can also test the other direction:
 
