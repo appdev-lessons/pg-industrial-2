@@ -343,7 +343,7 @@ Let's build them up step by step, starting with the Photo model and then the Use
 
 Open `app/models/photo.rb`. Right now it has a `belongs_to :owner` and some validations. Add the `has_many` associations after the `belongs_to`:
 
-```ruby{3,5,7}
+```ruby{4,6,8}
   # ...
   belongs_to :owner, class_name: "User", counter_cache: true
 
