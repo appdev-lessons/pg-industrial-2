@@ -557,7 +557,7 @@ Take a moment to appreciate what we just built. With a handful of association de
 
 There are a few other things we added to the User model beyond the associations:
 
-```ruby{6-7}
+```ruby{6-7,15-17}
 # ...
 class User < ApplicationRecord
   # ...
@@ -567,11 +567,19 @@ class User < ApplicationRecord
   after_save :purge_profile_banner, if: :remove_profile_banner
 
   before_create :set_default_avatar
-  # ...
+  
+  def set_default_avatar
+    # ...
+  end
+
+  def purge_profile_banner
+    profile_banner.purge_later
+  end
+end
 ```
 {: filename="app/models/user.rb" }
 
-This virtual attribute and callback let us remove a user's profile banner from a form checkbox. We'll use this in a later lesson when we build the profile edit page.
+This virtual attribute (`attr_accessor :remove_profile_banner`) and callback (`after_save :purge_profile_banner, if: :remove_profile_banner`) let us remove a user's profile banner from a form checkbox. We also added the `purge_profile_banner` method, which is called by the `after_save` callback. It removes the profile banner image from Cloudinary in a background job. We'll use this in a later lesson when we build the profile edit page.
 
 ```ruby{6,7}
 # ...
@@ -605,23 +613,6 @@ end
 {: filename="app/models/user.rb" }
 
 This is required by the `ransack` gem we installed previously. It explicitly allows which attributes can be searched. We only allow searching by `username`, since we don't want people searching by email or other private fields.
-
-```ruby{8-10}
-# ...
-class User < ApplicationRecord
-  # ...
-  def self.ransackable_attributes(auth_object = nil)
-    [ "username" ]
-  end
-
-  def purge_profile_banner
-    profile_banner.purge_later
-  end
-end
-```
-{: filename="app/models/user.rb" }
-
-This is the method called by the `after_save` callback above. It removes the profile banner image from Cloudinary in a background job.
 
 Now would be a good time for a commit:
 
