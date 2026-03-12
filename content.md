@@ -624,7 +624,7 @@ git commit -m "Built out all associations, validations, scopes on User and Photo
 git push
 ```
 
-[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/)
+[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/6a012e0b4eb1b85ec30393fe037a1f2cffe09a26)
 
 ## Run sample data
 
