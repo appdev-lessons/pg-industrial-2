@@ -585,10 +585,12 @@ This virtual attribute (`attr_accessor :remove_profile_banner`) and callback (`a
 # ...
 class User < ApplicationRecord
   # ...
-  after_save :purge_profile_banner, if: :remove_profile_banner
+  before_create :set_default_avatar
 
   scope :past_week, -> { where(created_at: 1.week.ago...) }
   scope :by_likes, -> { order(likes_count: :desc) }
+
+  def set_default_avatar
   # ...
 ```
 {: filename="app/models/user.rb" }
