@@ -305,7 +305,7 @@ Same pattern as before: `fan` points to the `users` table (so we need `to_table:
 
 ### Configure the Like model
 
-```ruby{2-3,5}
+```ruby{2:(18-58),3:(20-40),5}
 class Like < ApplicationRecord
   belongs_to :fan, class_name: "User", counter_cache: true
   belongs_to :photo, counter_cache: true
