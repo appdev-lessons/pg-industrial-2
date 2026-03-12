@@ -72,9 +72,9 @@ We also added `null: false` on the `body` column. A comment without a body shoul
 
 ### Configure the Comment model
 
-Open `app/models/comment.rb` and replace the generated content:
+Open `app/models/comment.rb` and add the following:
 
-```ruby{2-3,5,7}
+```ruby{2:(21-61),3:(20-40),5,7}
 class Comment < ApplicationRecord
   belongs_to :author, class_name: "User", counter_cache: true
   belongs_to :photo, counter_cache: true
