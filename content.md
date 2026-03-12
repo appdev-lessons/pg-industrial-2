@@ -534,7 +534,7 @@ There are a few other things we added to the User model beyond the associations:
 ```
 {: filename="app/models/user.rb" }
 
-This virtual attribute and callback let us remove a user's profile banner from a form checkbox. We'll use this in a later part when we build the profile edit page.
+This virtual attribute and callback let us remove a user's profile banner from a form checkbox. We'll use this in a later lesson when we build the profile edit page.
 
 ```ruby{3,5}
   # ...
@@ -692,7 +692,7 @@ In this lesson, we:
 9. Added scopes for reusable query logic
 10. Got `rake sample_data` running and verified everything in the console
 
-The data model is now complete. In the next parts, we'll turn our attention to the views and controllers, building out the actual pages that users interact with.
+The data model is now complete. In the next lessons, we'll turn our attention to the views and controllers, building out the actual pages that users interact with.
 
 Now would be a good time for a final commit and push:
 
