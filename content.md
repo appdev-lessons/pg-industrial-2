@@ -228,7 +228,7 @@ This prevents a user from sending multiple follow requests to the same person. T
 
 Add the custom validation method:
 
-```ruby{3,5-9}
+```ruby{4,6-10}
   # ...
   validates :recipient_id, uniqueness: { scope: :sender_id, message: "already requested" }
 
