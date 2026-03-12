@@ -96,7 +96,7 @@ Let's walk through this:
 Now migrate:
 
 ```
-rake db:migrate
+rails db:migrate
 ```
 
 And commit:
@@ -241,7 +241,7 @@ Our custom validation prevents a user from sending a follow request to themselve
 Now migrate:
 
 ```
-rake db:migrate
+rails db:migrate
 ```
 
 And commit:
@@ -310,7 +310,7 @@ The `counter_cache: true` on both associations updates `likes_count` on the User
 Now migrate:
 
 ```
-rake db:migrate
+rails db:migrate
 ```
 
 And commit:
@@ -615,7 +615,7 @@ This might take a minute or two since it's downloading avatar images from Cloudi
 
 If you get any errors, double-check that:
 1. Your `.env` file has valid Cloudinary credentials
-2. All five migrations have been run (`rake db:migrate`)
+2. All five migrations have been run (`rails db:migrate`)
 3. Your models match the code shown above
 
 Commit:
