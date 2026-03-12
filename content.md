@@ -153,9 +153,7 @@ Both `recipient` and `sender` point to the `users` table, so we need `foreign_ke
 
 The `status` column has a default of `"pending"`. When a user sends a follow request, it starts as pending until the recipient decides to accept or reject it.
 
-<aside markdown="1">
-Notice that we changed the column type from `t.string :status` (the generator default) to include `default: "pending"`. The generator doesn't know about our business logic, so we always need to review and edit generated migrations before running them.
-</aside>
+The generator doesn't know about our business logic, so we always need to review and edit generated migrations before running them!
 
 ### Configure the FollowRequest model
 
