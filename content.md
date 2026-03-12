@@ -138,35 +138,32 @@ Notice that we changed the column type from `t.string :status` (the generator de
 
 ### Configure the FollowRequest model
 
-This model has some interesting features. Replace the generated content:
+This model has some interesting features. Let's walk through each addition.
 
-```ruby{2-3,5,7,9-10,12-16}
+First, update the `belongs_to` associations to specify the User class:
+
+```ruby{2-3}
 class FollowRequest < ApplicationRecord
   belongs_to :recipient, class_name: "User"
   belongs_to :sender, class_name: "User"
-
-  enum :status, { pending: "pending", rejected: "rejected", accepted: "accepted" }
-
-  validates :recipient_id, uniqueness: { scope: :sender_id, message: "already requested" }
-
-  validate :users_cant_follow_themselves
-
-  def users_cant_follow_themselves
-    if sender_id == recipient_id
-      errors.add(:sender_id, "can't follow themselves")
-    end
-  end
-end
+  # ...
 ```
 {: filename="app/models/follow_request.rb" }
 
-There's a lot going on here, so let's break it down.
+Both `recipient` and `sender` point to the `User` model, so we need `class_name: "User"` since the association names don't match the model name. Now let's look at the other additions.
 
 ### The enum
 
-```ruby
-enum :status, { pending: "pending", rejected: "rejected", accepted: "accepted" }
+Add the enum declaration for the status column:
+
+```ruby{3}
+  # ...
+  belongs_to :sender, class_name: "User"
+
+  enum :status, { pending: "pending", rejected: "rejected", accepted: "accepted" }
+  # ...
 ```
+{: filename="app/models/follow_request.rb" }
 
 This is one of Rails' most powerful features. An `enum` declaration on a string column does several things automatically:
 
@@ -184,23 +181,37 @@ The `-> { accepted }` lambda works because `enum` defined that scope for us. We'
 
 ### Scoped uniqueness validation
 
-```ruby
-validates :recipient_id, uniqueness: { scope: :sender_id, message: "already requested" }
+Add the scoped uniqueness validation:
+
+```ruby{3}
+  # ...
+  enum :status, { pending: "pending", rejected: "rejected", accepted: "accepted" }
+
+  validates :recipient_id, uniqueness: { scope: :sender_id, message: "already requested" }
+  # ...
 ```
+{: filename="app/models/follow_request.rb" }
 
 This prevents a user from sending multiple follow requests to the same person. The `scope: :sender_id` means "the combination of `recipient_id` and `sender_id` must be unique." Alice can only send one follow request to Bob.
 
 ### Custom validation
 
-```ruby
-validate :users_cant_follow_themselves
+Add the custom validation method:
 
-def users_cant_follow_themselves
-  if sender_id == recipient_id
-    errors.add(:sender_id, "can't follow themselves")
+```ruby{3,5-9}
+  # ...
+  validates :recipient_id, uniqueness: { scope: :sender_id, message: "already requested" }
+
+  validate :users_cant_follow_themselves
+
+  def users_cant_follow_themselves
+    if sender_id == recipient_id
+      errors.add(:sender_id, "can't follow themselves")
+    end
   end
 end
 ```
+{: filename="app/models/follow_request.rb" }
 
 Notice that this uses `validate` (singular) rather than `validates` (plural). The `validates` method is for built-in validators like `presence`, `uniqueness`, and `format`. The `validate` method is for custom validation methods that you write yourself.
 
@@ -289,12 +300,10 @@ Let's build them up step by step, starting with the Photo model and then the Use
 
 ### Photo model: adding has_many associations
 
-Open `app/models/photo.rb`. Right now it has a `belongs_to :owner` and some validations from Part 1. Let's add the `has_many` associations:
+Open `app/models/photo.rb`. Right now it has a `belongs_to :owner` and some validations from Part 1. Add the `has_many` associations after the `belongs_to`:
 
-```ruby{6-8}
-class Photo < ApplicationRecord
-  has_one_attached :image, dependent: :purge_later
-
+```ruby{3,5,7}
+  # ...
   belongs_to :owner, class_name: "User", counter_cache: true
 
   has_many :comments, dependent: :destroy
@@ -304,13 +313,7 @@ class Photo < ApplicationRecord
   has_many :fans, through: :likes
 
   validates :caption, presence: true
-
-  validates :image, presence: true
-
-  scope :latest, -> { order(created_at: :desc) }
-  scope :pinned, -> { where(pinned: true) }
-  scope :unpinned, -> { where(pinned: false) }
-end
+  # ...
 ```
 {: filename="app/models/photo.rb" }
 
@@ -331,41 +334,14 @@ The User model is where all the associations come together. We're going to build
 
 First, let's add the `has_many` for comments. Open `app/models/user.rb`:
 
-```ruby{10}
-class User < ApplicationRecord
-  # Include default devise modules. Others available are:
-  # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
-  devise :database_authenticatable, :registerable,
-         :recoverable, :rememberable, :validatable
-
-  has_one_attached :avatar_image, dependent: :purge_later
+```ruby{3}
+  # ...
   has_one_attached :profile_banner, dependent: :purge_later
 
   has_many :comments, foreign_key: :author_id, dependent: :destroy
 
   has_many :own_photos, foreign_key: :owner_id, class_name: "Photo", dependent: :destroy
-
-  validates :username,
-    presence: true,
-    uniqueness: true,
-    format: {
-      with: /\A[\w_\.]+\z/i,
-      message: "can only contain letters, numbers, periods, and underscores"
-    }
-
-  validates :website, url: { allow_blank: true }
-
-  before_create :set_default_avatar
-
-  def set_default_avatar
-    image = "https://res.cloudinary.com/dzhwwlb9e/image/upload/v1773240782/960px-Default_pfp.svg_dpntzd_ga9htr.png"
-    avatar_image.attach(
-      io: URI.open(image),
-      filename: image.split("/").last,
-      content_type: "image/jpg"
-    )
-  end
-end
+  # ...
 ```
 {: filename="app/models/user.rb" }
 
@@ -373,16 +349,8 @@ We need `foreign_key: :author_id` because the `comments` table has a column call
 
 Next, let's add the follow request associations — both sent and received:
 
-```ruby{12-18}
-class User < ApplicationRecord
-  # Include default devise modules. Others available are:
-  # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
-  devise :database_authenticatable, :registerable,
-         :recoverable, :rememberable, :validatable
-
-  has_one_attached :avatar_image, dependent: :purge_later
-  has_one_attached :profile_banner, dependent: :purge_later
-
+```ruby{3,5,7,9,11}
+  # ...
   has_many :comments, foreign_key: :author_id, dependent: :destroy
 
   has_many :sent_follow_requests, foreign_key: :sender_id, class_name: "FollowRequest", dependent: :destroy
@@ -396,28 +364,7 @@ class User < ApplicationRecord
   has_many :pending_received_follow_requests, -> { pending }, foreign_key: :recipient_id, class_name: "FollowRequest"
 
   has_many :own_photos, foreign_key: :owner_id, class_name: "Photo", dependent: :destroy
-
-  validates :username,
-    presence: true,
-    uniqueness: true,
-    format: {
-      with: /\A[\w_\.]+\z/i,
-      message: "can only contain letters, numbers, periods, and underscores"
-    }
-
-  validates :website, url: { allow_blank: true }
-
-  before_create :set_default_avatar
-
-  def set_default_avatar
-    image = "https://res.cloudinary.com/dzhwwlb9e/image/upload/v1773240782/960px-Default_pfp.svg_dpntzd_ga9htr.png"
-    avatar_image.attach(
-      io: URI.open(image),
-      filename: image.split("/").last,
-      content_type: "image/jpg"
-    )
-  end
-end
+  # ...
 ```
 {: filename="app/models/user.rb" }
 
@@ -435,53 +382,14 @@ Why do we have `dependent: :destroy` on `sent_follow_requests` and `received_fol
 
 Now let's add the likes association:
 
-```ruby{22}
-class User < ApplicationRecord
-  # Include default devise modules. Others available are:
-  # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
-  devise :database_authenticatable, :registerable,
-         :recoverable, :rememberable, :validatable
-
-  has_one_attached :avatar_image, dependent: :purge_later
-  has_one_attached :profile_banner, dependent: :purge_later
-
-  has_many :comments, foreign_key: :author_id, dependent: :destroy
-
-  has_many :sent_follow_requests, foreign_key: :sender_id, class_name: "FollowRequest", dependent: :destroy
-
-  has_many :accepted_sent_follow_requests, -> { accepted }, foreign_key: :sender_id, class_name: "FollowRequest"
-
-  has_many :received_follow_requests, foreign_key: :recipient_id, class_name: "FollowRequest", dependent: :destroy
-
-  has_many :accepted_received_follow_requests, -> { accepted }, foreign_key: :recipient_id, class_name: "FollowRequest"
-
+```ruby{3}
+  # ...
   has_many :pending_received_follow_requests, -> { pending }, foreign_key: :recipient_id, class_name: "FollowRequest"
 
   has_many :likes, foreign_key: :fan_id, dependent: :destroy
 
   has_many :own_photos, foreign_key: :owner_id, class_name: "Photo", dependent: :destroy
-
-  validates :username,
-    presence: true,
-    uniqueness: true,
-    format: {
-      with: /\A[\w_\.]+\z/i,
-      message: "can only contain letters, numbers, periods, and underscores"
-    }
-
-  validates :website, url: { allow_blank: true }
-
-  before_create :set_default_avatar
-
-  def set_default_avatar
-    image = "https://res.cloudinary.com/dzhwwlb9e/image/upload/v1773240782/960px-Default_pfp.svg_dpntzd_ga9htr.png"
-    avatar_image.attach(
-      io: URI.open(image),
-      filename: image.split("/").last,
-      content_type: "image/jpg"
-    )
-  end
-end
+  # ...
 ```
 {: filename="app/models/user.rb" }
 
@@ -491,99 +399,37 @@ Again, we need `foreign_key: :fan_id` because the `likes` table uses `fan_id`, n
 
 Now for the grand finale — the `has_many :through` associations that make our social network actually work. These let us traverse chains of associations to reach distant related models.
 
-```ruby{26-34}
-class User < ApplicationRecord
-  # Include default devise modules. Others available are:
-  # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
-  devise :database_authenticatable, :registerable,
-         :recoverable, :rememberable, :validatable
-
-  has_one_attached :avatar_image, dependent: :purge_later
-  has_one_attached :profile_banner, dependent: :purge_later
-
-  has_many :comments, foreign_key: :author_id, dependent: :destroy
-
-  has_many :sent_follow_requests, foreign_key: :sender_id, class_name: "FollowRequest", dependent: :destroy
-
-  has_many :accepted_sent_follow_requests, -> { accepted }, foreign_key: :sender_id, class_name: "FollowRequest"
-
-  has_many :received_follow_requests, foreign_key: :recipient_id, class_name: "FollowRequest", dependent: :destroy
-
-  has_many :accepted_received_follow_requests, -> { accepted }, foreign_key: :recipient_id, class_name: "FollowRequest"
-
-  has_many :pending_received_follow_requests, -> { pending }, foreign_key: :recipient_id, class_name: "FollowRequest"
-
-  has_many :likes, foreign_key: :fan_id, dependent: :destroy
-
-  has_many :own_photos, foreign_key: :owner_id, class_name: "Photo", dependent: :destroy
-
-  has_many :liked_photos, through: :likes, source: :photo
-
-  has_many :leaders, through: :accepted_sent_follow_requests, source: :recipient
-
-  has_many :followers, through: :accepted_received_follow_requests, source: :sender
-
-  has_many :pending, through: :pending_received_follow_requests, source: :sender
-
-  has_many :feed, through: :leaders, source: :own_photos
-
-  has_many :discover, -> { distinct }, through: :leaders, source: :liked_photos
-
-  validates :username,
-    presence: true,
-    uniqueness: true,
-    format: {
-      with: /\A[\w_\.]+\z/i,
-      message: "can only contain letters, numbers, periods, and underscores"
-    }
-
-  validates :website, url: { allow_blank: true }
-
-  attr_accessor :remove_profile_banner
-  after_save :purge_profile_banner, if: :remove_profile_banner
-
-  scope :past_week, -> { where(created_at: 1.week.ago...) }
-
-  scope :by_likes, -> { order(likes_count: :desc) }
-
-  before_create :set_default_avatar
-
-  def self.ransackable_attributes(auth_object = nil)
-    [ "username" ]
-  end
-
-  def set_default_avatar
-    image = "https://res.cloudinary.com/dzhwwlb9e/image/upload/v1773240782/960px-Default_pfp.svg_dpntzd_ga9htr.png"
-    avatar_image.attach(
-      io: URI.open(image),
-      filename: image.split("/").last,
-      content_type: "image/jpg"
-    )
-  end
-
-  def purge_profile_banner
-    profile_banner.purge_later
-  end
-end
-```
-{: filename="app/models/user.rb" }
-
-This is the complete, final User model. Let's walk through each of the new `has_many :through` associations and the other additions.
+Let's walk through each of the new `has_many :through` associations and the other additions.
 
 #### liked_photos
 
-```ruby
-has_many :liked_photos, through: :likes, source: :photo
+Add the liked_photos association:
+
+```ruby{3}
+  # ...
+  has_many :own_photos, foreign_key: :owner_id, class_name: "Photo", dependent: :destroy
+
+  has_many :liked_photos, through: :likes, source: :photo
+  # ...
 ```
+{: filename="app/models/user.rb" }
 
 "A user has many liked photos, through their likes." Rails follows the chain: User -> Likes -> Photo. The `source: :photo` tells Rails which association on the `Like` model to follow (since `Like` has `belongs_to :photo`). Now we can write `user.liked_photos` to get all the photos a user has liked.
 
 #### leaders and followers
 
-```ruby
-has_many :leaders, through: :accepted_sent_follow_requests, source: :recipient
-has_many :followers, through: :accepted_received_follow_requests, source: :sender
+Add the leaders and followers associations:
+
+```ruby{3,5}
+  # ...
+  has_many :liked_photos, through: :likes, source: :photo
+
+  has_many :leaders, through: :accepted_sent_follow_requests, source: :recipient
+
+  has_many :followers, through: :accepted_received_follow_requests, source: :sender
+  # ...
 ```
+{: filename="app/models/user.rb" }
 
 These are the core social graph associations:
 
@@ -594,17 +440,31 @@ The `source:` option tells Rails which end of the FollowRequest to grab. For lea
 
 #### pending
 
-```ruby
-has_many :pending, through: :pending_received_follow_requests, source: :sender
+Add the pending association:
+
+```ruby{3}
+  # ...
+  has_many :followers, through: :accepted_received_follow_requests, source: :sender
+
+  has_many :pending, through: :pending_received_follow_requests, source: :sender
+  # ...
 ```
+{: filename="app/models/user.rb" }
 
 People who have sent me a follow request that I haven't responded to yet. We'll use this to display a notification count or a list of pending requests.
 
 #### feed — the through-through
 
-```ruby
-has_many :feed, through: :leaders, source: :own_photos
+Add the feed association:
+
+```ruby{3}
+  # ...
+  has_many :pending, through: :pending_received_follow_requests, source: :sender
+
+  has_many :feed, through: :leaders, source: :own_photos
+  # ...
 ```
+{: filename="app/models/user.rb" }
 
 This is where it gets really exciting. We already have `has_many :leaders` which gives us all the users I follow. Now we go _through_ those leaders to get their `own_photos`. The chain is: User -> Leaders (Users) -> Own Photos (Photos).
 
@@ -612,9 +472,18 @@ In plain English: "My feed is all the photos posted by people I follow." One lin
 
 #### discover — the through-through with distinct
 
-```ruby
-has_many :discover, -> { distinct }, through: :leaders, source: :liked_photos
+Add the discover association:
+
+```ruby{3}
+  # ...
+  has_many :feed, through: :leaders, source: :own_photos
+
+  has_many :discover, -> { distinct }, through: :leaders, source: :liked_photos
+
+  validates :username,
+  # ...
 ```
+{: filename="app/models/user.rb" }
 
 Similar to feed, but instead of our leaders' _own_ photos, we want photos our leaders have _liked_. The chain is: User -> Leaders -> Liked Photos.
 
@@ -629,33 +498,56 @@ Take a moment to appreciate what we just built. With a handful of association de
 
 There are a few other things we added to the User model beyond the associations:
 
-```ruby
-attr_accessor :remove_profile_banner
-after_save :purge_profile_banner, if: :remove_profile_banner
+```ruby{3-4}
+  # ...
+  validates :website, url: { allow_blank: true }
+
+  attr_accessor :remove_profile_banner
+  after_save :purge_profile_banner, if: :remove_profile_banner
+  # ...
 ```
+{: filename="app/models/user.rb" }
 
 This virtual attribute and callback let us remove a user's profile banner from a form checkbox. We'll use this in a later part when we build the profile edit page.
 
-```ruby
-scope :past_week, -> { where(created_at: 1.week.ago...) }
-scope :by_likes, -> { order(likes_count: :desc) }
+```ruby{3,5}
+  # ...
+  after_save :purge_profile_banner, if: :remove_profile_banner
+
+  scope :past_week, -> { where(created_at: 1.week.ago...) }
+
+  scope :by_likes, -> { order(likes_count: :desc) }
+  # ...
 ```
+{: filename="app/models/user.rb" }
 
 Two useful scopes: `past_week` returns users who signed up in the last week, and `by_likes` orders users by their like count (most liked first). The `1.week.ago...` syntax is a Ruby beginless range — it means "from one week ago to now."
 
-```ruby
-def self.ransackable_attributes(auth_object = nil)
-  [ "username" ]
-end
+```ruby{4-6}
+  # ...
+  scope :by_likes, -> { order(likes_count: :desc) }
+
+  before_create :set_default_avatar
+
+  def self.ransackable_attributes(auth_object = nil)
+    [ "username" ]
+  end
+  # ...
 ```
+{: filename="app/models/user.rb" }
 
 This is required by the `ransack` gem we installed in Part 1. It whitelists which attributes can be searched. We only allow searching by `username` — we don't want people searching by email or other private fields.
 
-```ruby
-def purge_profile_banner
-  profile_banner.purge_later
+```ruby{3-5}
+  # ...
+  end
+
+  def purge_profile_banner
+    profile_banner.purge_later
+  end
 end
 ```
+{: filename="app/models/user.rb" }
 
 This is the method called by the `after_save` callback above. It removes the profile banner image from Cloudinary in a background job.
 
