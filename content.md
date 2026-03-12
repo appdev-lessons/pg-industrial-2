@@ -663,7 +663,7 @@ In the future _you_ will need to write your own sample data task, and you should
 
 ## Explore the data
 
-Now let's verify that everything is wired up correctly. Start your server with `bin/dev` and visit `/rails/db` in your browser. You should see all of your tables listed. Click into each one and explore:
+Now let's verify that everything is wired up correctly. Start your server with `bin/server` and visit `/rails/db` in your browser. You should see all of your tables listed. Click into each one and explore:
 
 - **Users**: You should see 10 users (Alice through Jack) with their usernames, emails, and counter columns populated.
 - **Photos**: 3 photos per user, 30 total, with captions and `owner_id` values pointing to users.
