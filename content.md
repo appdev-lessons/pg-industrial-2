@@ -26,11 +26,12 @@ git checkout -b models-and-associations
 
 ## Generate Comments scaffold
 
-We can generate the rest of our tables with a few more scaffold commands. Let's start with comments:
+We can generate the rest of our tables with a few more scaffold commands. Let's start with comments (for this and all subsequent scaffold commands use the copy button to avoid typos):
 
 ```
-rails generate scaffold comment author:references photo:references body:text
+rails generate scaffold Comment author:references photo:references body:text
 ```
+{: copyable }
 
 This creates a migration, model, controller, views, and routes for comments. Notice that we used `author:references` instead of `user:references` because we want to call this association `author` because it reads much better in our code (`comment.author` vs `comment.user`).
 
@@ -113,8 +114,9 @@ git push
 Next up is the `FollowRequest` model. This is the table that powers the social graph. It tracks who wants to follow whom and whether that request has been accepted:
 
 ```
-rails generate scaffold follow_request recipient:references sender:references status
+rails generate scaffold FollowRequest recipient:references sender:references status
 ```
+{: copyable }
 
 We have two foreign keys here: `recipient` (the person being followed) and `sender` (the person who wants to follow). The `status` column will track whether the request is pending, accepted, or rejected.
 
@@ -257,8 +259,9 @@ git push
 The last table we need is Likes — tracking which users have liked which photos:
 
 ```
-rails generate scaffold like fan:references photo:references
+rails generate scaffold Like fan:references photo:references
 ```
+{: copyable }
 
 We're calling the user a `fan` rather than `user` because, again, `like.fan` reads much better than `like.user`.
 
