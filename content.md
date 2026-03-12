@@ -22,6 +22,8 @@ Now create a new branch from there:
 git checkout -b models-and-associations
 ```
 
+(For a reminder of the new Git workflow we're using, [review this lesson](/lessons/196-git-cli).)
+
 ## Generate Comments scaffold
 
 We can generate the rest of our tables with a few more scaffold commands. Let's start with comments:
