@@ -13,7 +13,7 @@ At this point, you should have Users and Photos tables with their models configu
 Let's create a new branch for this work:
 
 ```
-git checkout -b <your-initials>-models-and-associations
+git checkout -b models-and-associations
 ```
 
 ## Generate Comments scaffold
@@ -30,7 +30,7 @@ Let's commit the generated files before we start editing:
 
 ```
 git add -A
-git commit -m "generated Comments scaffold"
+git commit -m "Generated Comments scaffold"
 ```
 
 ### Edit the Comments migration
@@ -89,7 +89,7 @@ And commit:
 
 ```
 git add -A
-git commit -m "edited Comments migration and configured Comment model"
+git commit -m "Edited Comments migration and configured Comment model"
 ```
 
 ## Generate FollowRequests scaffold
@@ -106,7 +106,7 @@ Commit the generated files:
 
 ```
 git add -A
-git commit -m "generated FollowRequests scaffold"
+git commit -m "Generated FollowRequests scaffold"
 ```
 
 ### Edit the FollowRequests migration
@@ -227,7 +227,7 @@ And commit:
 
 ```
 git add -A
-git commit -m "edited FollowRequests migration and configured FollowRequest model"
+git commit -m "Edited FollowRequests migration and configured FollowRequest model"
 ```
 
 ## Generate Likes scaffold
@@ -244,7 +244,7 @@ Commit the generated files:
 
 ```
 git add -A
-git commit -m "generated Likes scaffold"
+git commit -m "Generated Likes scaffold"
 ```
 
 ### Edit the Likes migration
@@ -289,7 +289,7 @@ And commit:
 
 ```
 git add -A
-git commit -m "edited Likes migration and configured Like model"
+git commit -m "Edited Likes migration and configured Like model"
 ```
 
 ## Building out the associations
@@ -555,7 +555,7 @@ Now would be a good time for a commit:
 
 ```
 git add -A
-git commit -m "built out all associations, validations, scopes on User and Photo models"
+git commit -m "Built out all associations, validations, scopes on User and Photo models"
 ```
 
 ## Run sample data
@@ -588,7 +588,7 @@ Commit:
 
 ```
 git add -A
-git commit -m "verified sample data runs successfully"
+git commit -m "Verified sample data runs successfully"
 ```
 
 ## Explore the data
@@ -666,7 +666,7 @@ Now would be a good time for a final commit and push:
 
 ```
 git add -A
-git commit -m "completed Part 2: all models, associations, validations, and sample data"
+git commit -m "Completed Part 2: all models, associations, validations, and sample data"
 git push -u origin HEAD
 ```
 
