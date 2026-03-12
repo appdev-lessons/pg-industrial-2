@@ -10,7 +10,13 @@ Navigate to `github.com/codespaces` (or reopen the previous lesson and use the "
 
 At this point, you should have Users and Photos tables with their models configured. In this lesson, we'll generate the remaining three models (Comments, Likes, and FollowRequests), wire up all of the associations between our five models, add validations and scopes, and finally get our sample data running.
 
-Let's create a new branch for this work:
+Since each lesson builds on the work from the previous one, we want to branch off of our last branch rather than `main`. First, check out the branch from Part 1:
+
+```
+git checkout create-database
+```
+
+Now create a new branch from there:
 
 ```
 git checkout -b models-and-associations
