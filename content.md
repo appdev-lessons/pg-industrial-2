@@ -187,23 +187,25 @@ end
 
 An `enum` declaration on a string column does several things automatically:
 
-1. **Query methods**: You can call `follow_request.pending?`, `follow_request.accepted?`, or `follow_request.rejected?` to check the status.
-2. **Update methods**: You can call `follow_request.accepted!` to change the status to "accepted" and save the record in one step.
-3. **Scopes**: You get `FollowRequest.pending`, `FollowRequest.accepted`, and `FollowRequest.rejected`. These are scopes that return all records with that status.
+1. **Validations**: The _only_ valid column values are `"pending"`, `"rejected"`, or `"accepted"`. Anything else that someone tries to sneak in will throw a validation error.
+2. **Query methods**: You can call `follow_request.pending?`, `follow_request.accepted?`, or `follow_request.rejected?` to check the status.
+3. **Update methods**: You can call `follow_request.accepted!` to change the status to "accepted" and save the record in one step.
+4. **Scopes**: You get `FollowRequest.pending`, `FollowRequest.accepted`, and `FollowRequest.rejected`. These are scopes that return all records with that status.
+5. **Flexibility**: You can add more values (e.g. `blocked: "blocked"`) to the hash later without changing anything else to get validations, query methods, update methods, and scopes for the new value.
 
-That last point is particularly important. Later, when we build associations on the User model, we'll use these enum scopes to filter follow requests:
+That point about scopes is particularly important. Later, when we build associations on the User model, we'll use these enum scopes to filter follow requests:
 
 ```ruby{1:(42-56)}
 has_many :accepted_sent_follow_requests, -> { accepted }, foreign_key: :sender_id, class_name: "FollowRequest"
 ```
-{: filename="app/models/user.rb}
+{: filename="app/models/user.rb" }
 
 The `-> { accepted }` lambda works because `enum` defined that scope for us: 
 
 ```ruby{1:(61-80)}
   enum :status, { pending: "pending", rejected: "rejected", accepted: "accepted" }
 ```
-{: filename="app/models/follow_request.rb}
+{: filename="app/models/follow_request.rb" }
 
 We'll get to this soon.
 
