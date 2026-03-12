@@ -51,12 +51,12 @@ That last command publishes the branch to GitHub. From now on, you can push with
 
 Open the generated migration file in `db/migrate/`. Here's the final version with our edits:
 
-```ruby{5:(41-73),6:(33-58),7:(18-31)}
+```ruby{4:(55-74),6:(19-31)}
 class CreateComments < ActiveRecord::Migration[8.0]
   def change
     create_table :comments do |t|
       t.references :author, null: false, foreign_key: { to_table: :users }
-      t.references :photo, null: false, foreign_key: true, index: true
+      t.references :photo, null: false, foreign_key: true
       t.text :body, null: false
 
       t.timestamps
