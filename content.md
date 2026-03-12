@@ -423,7 +423,7 @@ Why do we have `dependent: :destroy` on `sent_follow_requests` and `received_fol
 
 Now let's add the likes association:
 
-```ruby{3}
+```ruby{4}
   # ...
   has_many :pending_received_follow_requests, -> { pending }, foreign_key: :recipient_id, class_name: "FollowRequest"
 
