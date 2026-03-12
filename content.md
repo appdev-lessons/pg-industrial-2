@@ -213,12 +213,12 @@ We'll get to this soon.
 
 Add the scoped uniqueness validation:
 
-```ruby{3}
+```ruby{4}
   # ...
   enum :status, { pending: "pending", rejected: "rejected", accepted: "accepted" }
 
   validates :recipient_id, uniqueness: { scope: :sender_id, message: "already requested" }
-  # ...
+end
 ```
 {: filename="app/models/follow_request.rb" }
 
