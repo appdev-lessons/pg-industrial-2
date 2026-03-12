@@ -560,7 +560,18 @@ git commit -m "built out all associations, validations, scopes on User and Photo
 
 ## Run sample data
 
-Remember the sample data task from Part 1 that we couldn't run yet? Now that all five models are in place (User, Photo, Comment, Like, and FollowRequest), let's finally try it:
+The starting point includes a pre-written `sample_data` rake task at `lib/tasks/dev.rake`. You don't need to write it; it's already done. Here's what it does at a high level:
+
+- Creates 10 users (Alice through Jack) with emails like `alice@example.com` and the password `appdev`
+- Makes some users private (Bob, Carol, Eve, Ivy)
+- Attaches specific avatar images from Cloudinary to each user
+- Gives Alice a profile banner image
+- Creates follow relationships between users (some accepted, some pending)
+- Creates 3 photos per user with philosophical captions
+- Creates likes and comments from followers
+- Uses `User.skip_callback(:create, :before, :set_default_avatar)` to bypass the default avatar callback, since it manually attaches specific avatars for each user
+
+Now that all five models are in place (User, Photo, Comment, Like, and FollowRequest), let's finally try it:
 
 ```
 rake sample_data
