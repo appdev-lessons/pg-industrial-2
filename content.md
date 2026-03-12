@@ -286,17 +286,18 @@ git push
 
 ### Edit the Likes migration
 
-```ruby{5:(37-68),6:(33-58)}
+```ruby{4:(52-71)}
 class CreateLikes < ActiveRecord::Migration[8.0]
   def change
     create_table :likes do |t|
-      t.references :fan, null: false, foreign_key: { to_table: :users }, index: true
-      t.references :photo, null: false, foreign_key: true, index: true
+      t.references :fan, null: false, foreign_key: { to_table: :users }
+      t.references :photo, null: false, foreign_key: true
 
       t.timestamps
     end
   end
 end
+
 ```
 {: filename="db/migrate/<date-time-of-migration>_create_likes.rb" }
 
