@@ -107,7 +107,7 @@ git commit -m "Edited Comments migration and configured Comment model"
 git push
 ```
 
-[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/)
+[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/f5969c9d02d8ed433ee4ed30dd6e8c506b46fc82)
 
 ## Generate FollowRequests scaffold
 
