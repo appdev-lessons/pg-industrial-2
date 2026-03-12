@@ -645,14 +645,21 @@ Now that all five models are in place (User, Photo, Comment, Like, and FollowReq
 rake sample_data
 ```
 
-This might take a minute or two since it's downloading avatar images from Cloudinary and creating a bunch of records. When it finishes, you should see output indicating that users, photos, follow requests, likes, and comments were all created successfully.
+When it finishes, you should see output indicating that users, photos, follow requests, likes, and comments were all created successfully.
 
 If you get any errors, double-check that:
-1. Your `.env` file has valid Cloudinary credentials
-2. All five migrations have been run (`rails db:migrate`)
-3. Your models match the code shown above
+
+1. Your `.env` file has valid Cloudinary credentials.
+2. All five migrations have been run (`rails db:migrate`).
+3. Your models match the code shown on my commits.
 
 If anything is missing, or you hit a bug, try to resolve things and commit and push before you move on from here.
+
+<div class="alert alert-info">
+The sample data task is a _very_ important step after finishing your database work. Writing, running, and exploring sample data tasks often shakes out bugs or deficiencies in the data model that we want to resolve _before_ we build a whole frontend on top of it.
+
+In the future _you_ will need to write your own sample data task, and you should do it very early before writing all of your front end code.
+</div>
 
 ## Explore the data
 
