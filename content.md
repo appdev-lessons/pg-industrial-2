@@ -282,7 +282,7 @@ git commit -m "Generated Likes scaffold"
 git push
 ```
 
-[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/)
+[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/a5f34f54d6e433ea48e5f25f2672296c33a5a69f)
 
 ### Edit the Likes migration
 
