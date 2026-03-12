@@ -6,7 +6,7 @@ Let's continue building our Photogram Industrial project. Here's the target we'r
 
 [pg-industrial.matchthetarget.com](https://pg-industrial.matchthetarget.com/)
 
-Navigate to `github.com/codespaces` (or reopen the previous lesson and use the "Load assignment" button) and reopen your `photogram-industrial` project codespace to continue building on what you accomplished in _Photogram Industrial Part 1_.
+Navigate to `github.com/codespaces` (or reopen the previous lesson and use the "Load assignment" button) and reopen your `pg-industrial` project codespace to continue building on what you accomplished in the previous lesson.
 
 At this point, you should have Users and Photos tables with their models configured. In this lesson, we'll generate the remaining three models (Comments, Likes, and FollowRequests), wire up all of the associations between our five models, add validations and scopes, and finally get our sample data running.
 
@@ -320,7 +320,7 @@ Let's build them up step by step, starting with the Photo model and then the Use
 
 ### Photo model: adding has_many associations
 
-Open `app/models/photo.rb`. Right now it has a `belongs_to :owner` and some validations from Part 1. Add the `has_many` associations after the `belongs_to`:
+Open `app/models/photo.rb`. Right now it has a `belongs_to :owner` and some validations. Add the `has_many` associations after the `belongs_to`:
 
 ```ruby{3,5,7}
   # ...
@@ -556,7 +556,7 @@ Two useful scopes: `past_week` returns users who signed up in the last week, and
 ```
 {: filename="app/models/user.rb" }
 
-This is required by the `ransack` gem we installed in Part 1. It whitelists which attributes can be searched. We only allow searching by `username`, since we don't want people searching by email or other private fields.
+This is required by the `ransack` gem we installed previously. It whitelists which attributes can be searched. We only allow searching by `username`, since we don't want people searching by email or other private fields.
 
 ```ruby{3-5}
   # ...
@@ -692,7 +692,7 @@ Now would be a good time for a final commit and push:
 
 ```
 git add -A
-git commit -m "Completed Part 2: all models, associations, validations, and sample data"
+git commit -m "Completed all models, associations, validations, and sample data"
 git push
 ```
 
