@@ -8,7 +8,7 @@ Let's continue building our Photogram Industrial project. Here's the target we'r
 
 Navigate to `github.com/codespaces` (or reopen the previous lesson and use the "Load assignment" button) and reopen your `photogram-industrial` project codespace to continue building on what you accomplished in _Photogram Industrial Part 1_.
 
-At this point, you should have Users and Photos tables with their models configured. In this lesson, we'll generate the remaining three models — Comments, Likes, and FollowRequests — wire up all of the associations between our five models, add validations and scopes, and finally get our sample data running.
+At this point, you should have Users and Photos tables with their models configured. In this lesson, we'll generate the remaining three models (Comments, Likes, and FollowRequests), wire up all of the associations between our five models, add validations and scopes, and finally get our sample data running.
 
 Let's create a new branch for this work:
 
@@ -24,7 +24,7 @@ We can generate the rest of our tables with a few more scaffold commands. Let's 
 rails generate scaffold comment author:references photo:references body:text
 ```
 
-This creates a migration, model, controller, views, and routes for comments. Notice that we used `author:references` instead of `user:references` — we want to call this association `author` because it reads much better in our code (`comment.author` vs `comment.user`).
+This creates a migration, model, controller, views, and routes for comments. Notice that we used `author:references` instead of `user:references` because we want to call this association `author` because it reads much better in our code (`comment.author` vs `comment.user`).
 
 Let's commit the generated files before we start editing:
 
@@ -52,7 +52,7 @@ end
 ```
 {: filename="db/migrate/<date-time-of-migration>_create_comments.rb" }
 
-The key change is on the `author` line. The generator created `foreign_key: true`, which tells the database to look for a table called `authors`. That table doesn't exist — our table is `users`. So we specify the target table explicitly with `foreign_key: { to_table: :users }`.
+The key change is on the `author` line. The generator created `foreign_key: true`, which tells the database to look for a table called `authors`. That table doesn't exist. Our table is `users`. So we specify the target table explicitly with `foreign_key: { to_table: :users }`.
 
 We also added `null: false` on the `body` column. A comment without a body shouldn't exist.
 
@@ -74,10 +74,10 @@ end
 
 Let's walk through this:
 
-- `belongs_to :author, class_name: "User"` — Since we named the association `author` instead of `user`, Rails would normally look for an `Author` model. The `class_name: "User"` tells it to use the `User` model instead.
-- `counter_cache: true` on both associations — Every time a comment is created or destroyed, Rails will automatically update the `comments_count` column on both the associated User _and_ the associated Photo. This avoids expensive `COUNT(*)` queries when displaying "24 comments" on a photo or a user's profile.
-- `validates :body, presence: true` — Matching our database-level `null: false` constraint with a model-level validation gives the user a friendly error message instead of a database error.
-- `scope :default_order` — Comments should display oldest-first (ascending), like a conversation.
+- `belongs_to :author, class_name: "User"` : since we named the association `author` instead of `user`, Rails would normally look for an `Author` model. The `class_name: "User"` tells it to use the `User` model instead.
+- `counter_cache: true` on both associations : every time a comment is created or destroyed, Rails will automatically update the `comments_count` column on both the associated User _and_ the associated Photo. This avoids expensive `COUNT(*)` queries when displaying "24 comments" on a photo or a user's profile.
+- `validates :body, presence: true` : matching our database-level `null: false` constraint with a model-level validation gives the user a friendly error message instead of a database error.
+- `scope :default_order` : comments should display oldest-first (ascending), like a conversation.
 
 Now migrate:
 
@@ -94,7 +94,7 @@ git commit -m "edited Comments migration and configured Comment model"
 
 ## Generate FollowRequests scaffold
 
-Next up is the `FollowRequest` model — this is the table that powers the social graph. It tracks who wants to follow whom and whether that request has been accepted:
+Next up is the `FollowRequest` model. This is the table that powers the social graph. It tracks who wants to follow whom and whether that request has been accepted:
 
 ```
 rails generate scaffold follow_request recipient:references sender:references status
@@ -128,7 +128,7 @@ end
 ```
 {: filename="db/migrate/<date-time-of-migration>_create_follow_requests.rb" }
 
-Both `recipient` and `sender` point to the `users` table, so we need `foreign_key: { to_table: :users }` on both. Neither can be null — every follow request must have both a sender and a recipient.
+Both `recipient` and `sender` point to the `users` table, so we need `foreign_key: { to_table: :users }` on both. Neither can be null; every follow request must have both a sender and a recipient.
 
 The `status` column has a default of `"pending"`. When a user sends a follow request, it starts as pending until the recipient decides to accept or reject it.
 
@@ -169,7 +169,7 @@ This is one of Rails' most powerful features. An `enum` declaration on a string 
 
 1. **Query methods**: You can call `follow_request.pending?`, `follow_request.accepted?`, or `follow_request.rejected?` to check the status.
 2. **Update methods**: You can call `follow_request.accepted!` to change the status to "accepted" and save the record in one step.
-3. **Scopes**: You get `FollowRequest.pending`, `FollowRequest.accepted`, and `FollowRequest.rejected` for free — these are scopes that return all records with that status.
+3. **Scopes**: You get `FollowRequest.pending`, `FollowRequest.accepted`, and `FollowRequest.rejected` . These are scopes that return all records with that status.
 
 That last point is particularly important. Later, when we build associations on the User model, we'll use these enum scopes to filter follow requests:
 
@@ -215,7 +215,7 @@ end
 
 Notice that this uses `validate` (singular) rather than `validates` (plural). The `validates` method is for built-in validators like `presence`, `uniqueness`, and `format`. The `validate` method is for custom validation methods that you write yourself.
 
-Our custom validation prevents a user from sending a follow request to themselves — which would be nonsensical.
+Our custom validation prevents a user from sending a follow request to themselves, which would be nonsensical.
 
 Now migrate:
 
@@ -319,9 +319,9 @@ Open `app/models/photo.rb`. Right now it has a `belongs_to :owner` and some vali
 
 The new lines are:
 
-- `has_many :comments, dependent: :destroy` — A photo has many comments. When a photo is deleted, its comments are deleted too.
-- `has_many :likes, dependent: :destroy` — Same idea for likes.
-- `has_many :fans, through: :likes` — This is a **has_many :through** association. It says: "A photo has many fans, _through_ its likes." Rails will follow the chain: Photo -> Likes -> Fan (User). This lets us write `photo.fans` to get all the users who liked a given photo — no manual joins required.
+- `has_many :comments, dependent: :destroy` : a photo has many comments. When a photo is deleted, its comments are deleted too.
+- `has_many :likes, dependent: :destroy` : same idea for likes.
+- `has_many :fans, through: :likes` : this is a **has_many :through** association. It says: "A photo has many fans, _through_ its likes." Rails will follow the chain: Photo -> Likes -> Fan (User). This lets us write `photo.fans` to get all the users who liked a given photo, with no manual joins required.
 
 <div class="alert alert-info">
 
@@ -347,7 +347,7 @@ First, let's add the `has_many` for comments. Open `app/models/user.rb`:
 
 We need `foreign_key: :author_id` because the `comments` table has a column called `author_id`, not `user_id`. Without specifying the foreign key, Rails would look for `user_id` and find nothing.
 
-Next, let's add the follow request associations — both sent and received:
+Next, let's add the follow request associations, both sent and received:
 
 ```ruby{3,5,7,9,11}
   # ...
@@ -370,11 +370,11 @@ Next, let's add the follow request associations — both sent and received:
 
 This is a big chunk, so let's unpack it:
 
-- `has_many :sent_follow_requests` — All follow requests _this user sent_ (where they are the `sender`). We need both `foreign_key: :sender_id` and `class_name: "FollowRequest"` because the association name doesn't match the model name.
-- `has_many :accepted_sent_follow_requests, -> { accepted }` — A _scoped_ version of sent follow requests that only returns the accepted ones. The `-> { accepted }` lambda uses the scope that our `enum` on FollowRequest created for us. This is where the enum really pays off.
-- `has_many :received_follow_requests` — All follow requests _sent to this user_ (where they are the `recipient`).
-- `has_many :accepted_received_follow_requests, -> { accepted }` — Only the accepted ones among received requests.
-- `has_many :pending_received_follow_requests, -> { pending }` — Only the pending ones. We'll use this to show a user their pending follow requests that need action.
+- `has_many :sent_follow_requests` : all follow requests _this user sent_ (where they are the `sender`). We need both `foreign_key: :sender_id` and `class_name: "FollowRequest"` because the association name doesn't match the model name.
+- `has_many :accepted_sent_follow_requests, -> { accepted }` : a _scoped_ version of sent follow requests that only returns the accepted ones. The `-> { accepted }` lambda uses the scope that our `enum` on FollowRequest created for us. This is where the enum really pays off.
+- `has_many :received_follow_requests` : all follow requests _sent to this user_ (where they are the `recipient`).
+- `has_many :accepted_received_follow_requests, -> { accepted }` : only the accepted ones among received requests.
+- `has_many :pending_received_follow_requests, -> { pending }` : only the pending ones. We'll use this to show a user their pending follow requests that need action.
 
 <aside markdown="1">
 Why do we have `dependent: :destroy` on `sent_follow_requests` and `received_follow_requests` but not on the scoped versions (`accepted_sent_follow_requests`, etc.)? Because the scoped versions are just filtered views of the same underlying records. If we put `dependent: :destroy` on those too, Rails would try to destroy the same records multiple times. We only need it on the "base" associations.
@@ -491,7 +491,7 @@ The `-> { distinct }` scope is important here. Without it, if two of your leader
 
 <div class="alert alert-info">
 
-Take a moment to appreciate what we just built. With a handful of association declarations, we can now write `user.feed` to get a personalized timeline and `user.discover` to get a recommendation feed. No raw SQL, no complex queries scattered through controllers — just clean, readable Ruby.
+Take a moment to appreciate what we just built. With a handful of association declarations, we can now write `user.feed` to get a personalized timeline and `user.discover` to get a recommendation feed. No raw SQL, no complex queries scattered through controllers. Just clean, readable Ruby.
 </div>
 
 #### Other additions
@@ -521,7 +521,7 @@ This virtual attribute and callback let us remove a user's profile banner from a
 ```
 {: filename="app/models/user.rb" }
 
-Two useful scopes: `past_week` returns users who signed up in the last week, and `by_likes` orders users by their like count (most liked first). The `1.week.ago...` syntax is a Ruby beginless range — it means "from one week ago to now."
+Two useful scopes: `past_week` returns users who signed up in the last week, and `by_likes` orders users by their like count (most liked first). The `1.week.ago...` syntax is a Ruby beginless range. It means "from one week ago to now."
 
 ```ruby{4-6}
   # ...
@@ -536,7 +536,7 @@ Two useful scopes: `past_week` returns users who signed up in the last week, and
 ```
 {: filename="app/models/user.rb" }
 
-This is required by the `ransack` gem we installed in Part 1. It whitelists which attributes can be searched. We only allow searching by `username` — we don't want people searching by email or other private fields.
+This is required by the `ransack` gem we installed in Part 1. It whitelists which attributes can be searched. We only allow searching by `username`, since we don't want people searching by email or other private fields.
 
 ```ruby{3-5}
   # ...
@@ -560,7 +560,7 @@ git commit -m "built out all associations, validations, scopes on User and Photo
 
 ## Run sample data
 
-Remember the sample data task from Part 1 that we couldn't run yet? Now that all five models are in place — User, Photo, Comment, Like, and FollowRequest — let's finally try it:
+Remember the sample data task from Part 1 that we couldn't run yet? Now that all five models are in place (User, Photo, Comment, Like, and FollowRequest), let's finally try it:
 
 ```
 rake sample_data
@@ -644,12 +644,12 @@ In this lesson, we:
 4. Added `counter_cache: true` to keep count columns in sync automatically
 5. Used `enum :status` on FollowRequest to get free query methods and scopes
 6. Built `has_many` and `has_many :through` associations on User and Photo
-7. Created the `feed` and `discover` through-through associations — the crown jewels of our data model
+7. Created the `feed` and `discover` through-through associations, the crown jewels of our data model
 8. Added validations (both built-in `validates` and custom `validate`)
 9. Added scopes for reusable query logic
 10. Got `rake sample_data` running and verified everything in the console
 
-The data model is now complete. In the next parts, we'll turn our attention to the views and controllers — building out the actual pages that users interact with.
+The data model is now complete. In the next parts, we'll turn our attention to the views and controllers, building out the actual pages that users interact with.
 
 Now would be a good time for a final commit and push:
 
