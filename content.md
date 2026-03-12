@@ -36,6 +36,8 @@ git push --set-upstream origin models-and-associations
 
 That last command publishes the branch to GitHub. From now on, you can push with just `git push` after each commit.
 
+[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/)
+
 ### Edit the Comments migration
 
 Open the generated migration file in `db/migrate/`. Here's the final version with our edits:
@@ -96,6 +98,8 @@ git commit -m "Edited Comments migration and configured Comment model"
 git push
 ```
 
+[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/)
+
 ## Generate FollowRequests scaffold
 
 Next up is the `FollowRequest` model. This is the table that powers the social graph. It tracks who wants to follow whom and whether that request has been accepted:
@@ -113,6 +117,8 @@ git add -A
 git commit -m "Generated FollowRequests scaffold"
 git push
 ```
+
+[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/)
 
 ### Edit the FollowRequests migration
 
@@ -236,6 +242,8 @@ git commit -m "Edited FollowRequests migration and configured FollowRequest mode
 git push
 ```
 
+[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/)
+
 ## Generate Likes scaffold
 
 The last table we need is Likes — tracking which users have liked which photos:
@@ -253,6 +261,8 @@ git add -A
 git commit -m "Generated Likes scaffold"
 git push
 ```
+
+[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/)
 
 ### Edit the Likes migration
 
@@ -299,6 +309,8 @@ git add -A
 git commit -m "Edited Likes migration and configured Like model"
 git push
 ```
+
+[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/)
 
 ## Building out the associations
 
@@ -567,6 +579,8 @@ git commit -m "Built out all associations, validations, scopes on User and Photo
 git push
 ```
 
+[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/)
+
 ## Run sample data
 
 The starting point includes a pre-written `sample_data` rake task at `lib/tasks/dev.rake`. You don't need to write it; it's already done. Here's what it does at a high level:
@@ -600,6 +614,8 @@ git add -A
 git commit -m "Verified sample data runs successfully"
 git push
 ```
+
+[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/)
 
 ## Explore the data
 
@@ -679,6 +695,8 @@ git add -A
 git commit -m "Completed Part 2: all models, associations, validations, and sample data"
 git push
 ```
+
+[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/)
 
 ---
 
