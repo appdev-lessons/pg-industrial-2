@@ -85,6 +85,12 @@ Submit your pull request URL:
   - Not quite. Make sure the URL looks like: `github.com/[YOUR_GITHUB_USERNAME]/pg-industrial/pull/X`
 {: .free_text #pr_url title="Pull request URL" points="1" answer="1" }
 
+<div class="alert alert-info">
+Are you still navigating manually through the file tree and clicking to open everything? That's going to become very painful, very quickly. One of the biggest things you can do to increase your productivity is navigating your codebase and its dozens of files without your mouse.
+
+Stop now and experiment with [jumping to files](/lessons/194-helper-methods-part-3#partials-shine-along-with-jump-to-file) in the VSCode fuzzy search bar.
+</div>
+
 ### Edit the Comments migration
 
 Open the generated migration file in `db/migrate/`. Here's the final version with our edits:
