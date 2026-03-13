@@ -24,6 +24,8 @@ git checkout -b models-and-associations
 
 (For a reminder of the new Git workflow we're using, [review this lesson](/lessons/196-git-cli).)
 
+If you need a reference while you work, you can visit [my pull request](#my-pull-request){: target="_self" } below. Individual commits are also linked throughout the lesson for convenience.
+
 ## Generate Comments scaffold
 
 We can generate the rest of our tables with a few more scaffold commands. Let's start with comments (for this and all subsequent scaffold commands use the copy button to avoid typos):
@@ -72,7 +74,7 @@ It should _not_ contain `appdev-projects` in the URL. If it does, you submitted 
 You don't need to merge your branches now, but when you're ready: [see the notes in our Git CLI lesson](/lessons/196-git-cli#merging-branches).
 </aside>
 
-Any additional commits you push to this branch will automatically show up on the pull request. As you work through the rest of this lesson, you can periodically check the PR diff on GitHub in the "Changes" tab to get a comprehensive overview of everything that has changed so far.
+Any additional commits you push to this branch will automatically show up on the pull request. As you work through the rest of this lesson, you can periodically check the PR diff on GitHub in the "Files changed" tab to get a comprehensive overview of everything that has changed so far.
 
 Submit your pull request URL:
 
@@ -773,6 +775,10 @@ If anything is missing, or you hit a bug, try to resolve things and commit and p
 One last thing:
 
 Now that our backend is setup, you should be able to `rspec` (and `grade`) to start getting some passing specs (and start gaining some points for this series).
+
+## My pull request
+
+You can visit the full diff of changes on my [pull request](https://github.com/bpurinton/pg-industrial/pull/2) in the [Files changed tab](https://github.com/bpurinton/pg-industrial/pull/2/files) if you need to compare your work to a working solution.
 
 ---
 
