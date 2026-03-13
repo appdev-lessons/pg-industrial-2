@@ -47,6 +47,26 @@ That last command publishes the branch to GitHub. From now on, you can push with
 
 [See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/049f60b79512216617f31c3d4c41c242420168a6)
 
+### Open a pull request
+
+Now that you've published the branch, go to GitHub and open a pull request. The **base** branch should be `create-database` (the branch from the previous lesson) and the **compare** branch should be `models-and-associations`.
+
+<div class="alert alert-info">
+
+Need a refresher on opening a PR? [Watch this short video demonstration.](https://share.descript.com/view/RLP4apAu5pp) And when you're ready to merge: [see the notes in our Git CLI lesson](/lessons/196-git-cli#merging-branches).
+</div>
+
+Any additional commits you push to this branch will automatically show up on the pull request. As you work through the rest of this lesson, you can periodically check the PR diff on GitHub to get a comprehensive overview of everything that has changed so far.
+
+Submit your pull request URL:
+
+- `models-and-associations` compared to `create-database`:
+- github.com
+  - Great job!
+- any
+  - Not quite. Make sure the URL looks like: `github.com/[YOUR_GITHUB_USERNAME]/pg-industrial/pull/X`
+{: .free_text #pr_url title="Pull request URL" points="1" answer="1" }
+
 ### Edit the Comments migration
 
 Open the generated migration file in `db/migrate/`. Here's the final version with our edits:
@@ -737,24 +757,6 @@ If anything is missing, or you hit a bug, try to resolve things and commit and p
 One last thing:
 
 Now that our backend is setup, you should be able to `rspec` (and `grade`) to start getting some passing specs (and start gaining some points for this series).
-
-## Open and submit your pull request
-
-Open a pull request on GitHub for the `models-and-associations` branch. The **base** branch should be `create-database` (the branch from the previous lesson).
-
-<div class="alert alert-info">
-
-Need a refresher on opening a PR? [Watch this short video demonstration.](https://share.descript.com/view/RLP4apAu5pp) And when you're ready to merge: [see the notes in our Git CLI lesson](https://learn.firstdraft.com/lessons/196-git-cli#merging-branches).
-</div>
-
-Submit your pull request URL:
-
-- `models-and-associations` compared to `create-database`:
-- github.com
-  - Great job!
-- any
-  - Not quite. Make sure the URL looks like: `github.com/[YOUR_GITHUB_USERNAME]/pg-industrial/pull/X`
-{: .free_text #pr_url title="Pull request URL" points="1" answer="1" }
 
 ---
 
