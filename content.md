@@ -72,6 +72,8 @@ It should _not_ contain `appdev-projects` in the URL. If it does, you submitted 
 You don't need to merge your branches now, but when you're ready: [see the notes in our Git CLI lesson](/lessons/196-git-cli#merging-branches).
 </aside>
 
+Any additional commits you push to this branch will automatically show up on the pull request. As you work through the rest of this lesson, you can periodically check the PR diff on GitHub in the "Changes" tab to get a comprehensive overview of everything that has changed so far.
+
 Submit your pull request URL:
 
 - `models-and-associations` compared to `create-database`:
