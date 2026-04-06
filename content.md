@@ -22,7 +22,21 @@ Now create a new branch from there:
 git checkout -b models-and-associations
 ```
 
-(For a reminder of the new Git workflow we're using, [review this lesson](/lessons/196-git-cli).)
+(Note: There is a another more modern command for switching branches:
+
+```
+git switch create-database
+```
+
+and creating a new branch:
+
+```
+git switch -c fmodels-and-associations
+```
+
+`checkout` and `switch` have the same effect, and you will likely see both in online resources.)
+
+For a reminder of the new Git workflow we're using, [review this lesson](/lessons/196-git-cli).
 
 If you need a reference while you work, you can visit [my pull request](#my-pull-request){: target="_self" } below. Individual commits are also linked throughout the lesson for convenience.
 
