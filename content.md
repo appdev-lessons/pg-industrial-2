@@ -31,7 +31,7 @@ git switch create-database
 and creating a new branch:
 
 ```
-git switch -c fmodels-and-associations
+git switch -c models-and-associations
 ```
 
 `checkout` and `switch` have the same effect, and you will likely see both in online resources.)
