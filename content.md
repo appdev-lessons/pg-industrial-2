@@ -1,4 +1,4 @@
-# Photogram Industrial, Part 2: Scaffolds, associations, and validations
+# Photogram Industrial, Part 2: Scaffolds, Associations, and Validations
 
 ## Getting started
 
