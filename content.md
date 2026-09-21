@@ -67,9 +67,9 @@ That last command publishes the branch to GitHub. From now on, you can push with
 
 Now that you've pushed your branch to GitHub, it's time to open a **pull request** (PR). A pull request lets us review your code and leave line-by-line feedback.
 
-<div class="alert alert-info">
+<div class="alert alert-primary">
 
-[Here is a short video demonstration of the process.](https://share.descript.com/view/RLP4apAu5pp) You should also carefully read the notes below!
+<i class="fa-solid fa-circle-play"></i> [Here is a short video demonstration of the process.](https://share.descript.com/view/RLP4apAu5pp) You should also carefully read the notes below!
 </div>
 
 On GitHub, navigate to your `pg-industrial` repository. You should see a prompt to open a pull request for the `models-and-associations` branch that you just published, or you can go to the "Pull requests" tab and click "New pull request."
@@ -130,7 +130,7 @@ We also added `null: false` on the `body` column. A comment without a body shoul
 ### Configure the Comment model
 
 <div class="alert alert-info">
-Are you still navigating manually through the file tree and clicking to open everything? That's going to become very painful, very quickly. One of the biggest things you can do to increase your productivity is navigating your codebase and its dozens of files without your mouse.
+<i class="fa-solid fa-circle-info"></i> Are you still navigating manually through the file tree and clicking to open everything? That's going to become very painful, very quickly. One of the biggest things you can do to increase your productivity is navigating your codebase and its dozens of files without your mouse.
 
 Stop now and experiment with [jumping to files](/lessons/194-helper-methods-part-3#partials-shine-along-with-jump-to-file) in the VSCode fuzzy search bar.
 </div>
@@ -431,7 +431,7 @@ The new lines are:
 
 <div class="alert alert-info">
 
-`has_many :through` is one of the most powerful features in Rails. It lets you traverse a chain of associations to reach a distant related model. The "through" table (in this case, `likes`) acts as a **join table** connecting photos to users. This is how you model many-to-many relationships in Rails.
+<i class="fa-solid fa-circle-info"></i> `has_many :through` is one of the most powerful features in Rails. It lets you traverse a chain of associations to reach a distant related model. The "through" table (in this case, `likes`) acts as a **join table** connecting photos to users. This is how you model many-to-many relationships in Rails.
 </div>
 
 ### User model: building up step by step
@@ -613,7 +613,7 @@ The `-> { distinct }` scope is important here. Without it, if two of your leader
 
 <div class="alert alert-info">
 
-Take a moment to appreciate what we just built. With a handful of association declarations, we can now write `user.feed` to get a personalized timeline and `user.discover` to get a recommendation feed. No raw SQL, no complex queries scattered through controllers. Just clean, readable Ruby.
+<i class="fa-solid fa-circle-info"></i> Take a moment to appreciate what we just built. With a handful of association declarations, we can now write `user.feed` to get a personalized timeline and `user.discover` to get a recommendation feed. No raw SQL, no complex queries scattered through controllers. Just clean, readable Ruby.
 </div>
 
 #### Other additions
@@ -719,7 +719,7 @@ If you get any errors, double-check that:
 If anything is missing, or you hit a bug, try to resolve things and commit and push before you move on from here.
 
 <div class="alert alert-info">
-The sample data task is a _very_ important step after finishing your database work. Writing, running, and exploring sample data tasks often shakes out bugs or deficiencies in the data model that we want to resolve _before_ we build a whole frontend on top of it.
+<i class="fa-solid fa-circle-info"></i> The sample data task is a _very_ important step after finishing your database work. Writing, running, and exploring sample data tasks often shakes out bugs or deficiencies in the data model that we want to resolve _before_ we build a whole frontend on top of it.
 
 In the future _you_ will need to write your own sample data task, and you should do it very early before writing all of your front end code.
 </div>
