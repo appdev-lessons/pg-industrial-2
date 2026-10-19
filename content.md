@@ -10,35 +10,19 @@ Navigate to `github.com/codespaces` (or reopen the previous lesson and use the "
 
 At this point, you should have Users and Photos tables with their models configured. In this lesson, we'll generate the remaining three models (Comments, Likes, and FollowRequests), wire up all of the associations between our five models, add validations and scopes, and finally get our sample data running.
 
-Since each lesson builds on the work from the previous one, we want to branch off of our last branch rather than `main`. First, check out the branch from the previous lesson:
-
-```
-git checkout create-database
-```
-
-Now create a new branch from there:
-
-```
-git checkout -b models-and-associations
-```
-
-(Note: There is a another more modern command for switching branches:
+Since each lesson builds on the work from the previous one, we want to branch off of our last branch rather than `main`. First, switch to the branch from the previous lesson:
 
 ```
 git switch create-database
 ```
 
-and creating a new branch:
+Now create a new branch from there:
 
 ```
 git switch -c models-and-associations
 ```
 
-`checkout` and `switch` have the same effect, and you will likely see both in online resources.)
-
 For a reminder of the new Git workflow we're using, [review this lesson](/lessons/196-git-cli).
-
-If you need a reference while you work, you can visit [my pull request](#my-pull-request){: target="_self" } below. Individual commits are also linked throughout the lesson for convenience.
 
 ## Generate Comments scaffold
 
@@ -49,7 +33,7 @@ rails generate scaffold Comment author:references photo:references body:text
 ```
 {: copyable }
 
-This creates a migration, model, controller, views, and routes for comments. Notice that we used `author:references` instead of `user:references` because we want to call this association `author` because it reads much better in our code (`comment.author` vs `comment.user`).
+This creates a migration, model, controller, views, and routes for comments. Notice that we used `author:references` instead of `user:references`, because `comment.author` reads better in our code than `comment.user`.
 
 Let's commit the generated files before we start editing:
 
@@ -60,8 +44,6 @@ git push --set-upstream origin models-and-associations
 ```
 
 That last command publishes the branch to GitHub. From now on, you can push with just `git push` after each commit.
-
-[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/049f60b79512216617f31c3d4c41c242420168a6)
 
 ### Open and submit your pull request
 
@@ -109,7 +91,7 @@ Submit your pull request URL:
 Open the generated migration file in `db/migrate/`. Here's the final version with our edits:
 
 ```ruby{4:(55-74),6:(19-31)}
-class CreateComments < ActiveRecord::Migration[8.0]
+class CreateComments < ActiveRecord::Migration[8.1]
   def change
     create_table :comments do |t|
       t.references :author, null: false, foreign_key: { to_table: :users }
@@ -130,6 +112,7 @@ We also added `null: false` on the `body` column. A comment without a body shoul
 ### Configure the Comment model
 
 <div class="alert alert-info">
+
 <i class="fa-solid fa-circle-info"></i> Are you still navigating manually through the file tree and clicking to open everything? That's going to become very painful, very quickly. One of the biggest things you can do to increase your productivity is navigating your codebase and its dozens of files without your mouse.
 
 Stop now and experiment with [jumping to files](/lessons/194-helper-methods-part-3#partials-shine-along-with-jump-to-file) in the VSCode fuzzy search bar.
@@ -170,8 +153,6 @@ git commit -m "Edited Comments migration and configured Comment model"
 git push
 ```
 
-[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/f5969c9d02d8ed433ee4ed30dd6e8c506b46fc82)
-
 ## Generate FollowRequests scaffold
 
 Next up is the `FollowRequest` model. This is the table that powers the social graph. It tracks who wants to follow whom and whether that request has been accepted:
@@ -191,14 +172,12 @@ git commit -m "Generated FollowRequests scaffold"
 git push
 ```
 
-[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/8390f1154d5e84be6464862d511168a1b270ff97)
-
 ### Edit the FollowRequests migration
 
 Open the migration and make these changes:
 
 ```ruby{4:(58-77),5:(55-74),6:(23-42)}
-class CreateFollowRequests < ActiveRecord::Migration[8.0]
+class CreateFollowRequests < ActiveRecord::Migration[8.1]
   def change
     create_table :follow_requests do |t|
       t.references :recipient, null: false, foreign_key: { to_table: :users }
@@ -263,7 +242,7 @@ has_many :accepted_sent_follow_requests, -> { accepted }, foreign_key: :sender_i
 ```
 {: filename="app/models/user.rb" }
 
-The `-> { accepted }` lambda works because `enum` defined that scope for us: 
+The `-> { accepted }` lambda works because `enum` defined that scope for us:
 
 ```ruby{1:(59-78)}
 enum :status, { pending: "pending", rejected: "rejected", accepted: "accepted" }
@@ -271,6 +250,19 @@ enum :status, { pending: "pending", rejected: "rejected", accepted: "accepted" }
 {: filename="app/models/follow_request.rb" }
 
 We'll get to this soon.
+
+Let's check which methods an `enum` gives us.
+
+- An `Account` model has `enum :role, { admin: "admin", member: "member" }`. Select all of the methods that Rails defines.
+- `Account.find_admin`
+  - Not quite. `enum` doesn't define finder methods; the scope is `Account.admin`.
+- `Account.admin`
+  - Yes! That's the scope for accounts whose role is `"admin"`.
+- `account.member?`
+  - Yes! That's the query method for one value.
+- `account.admin!`
+  - Yes! That updates the role to `"admin"` and saves the record.
+{: .choose_all #enum_methods title="Methods from an enum" points="1" answer="[2,3,4]" }
 
 ### Scoped uniqueness validation
 
@@ -310,6 +302,17 @@ Notice that this uses `validate` (singular) rather than `validates` (plural). Th
 
 Our custom validation prevents a user from sending a follow request to themselves, which would be nonsensical.
 
+Here's a check on `validate` and `validates`.
+
+- An `Event` model has a method called `ends_after_start`. Which line runs it as a validation?
+- `validate :ends_after_start`
+  - Yes! `validate` (singular) runs a method we wrote.
+- `validates :ends_after_start`
+  - Not quite. `validates` (plural) expects an attribute and a built-in validator, like `presence: true`.
+- `validates :ends_at, ends_after_start: true`
+  - Not quite. That would look for a validator class called `EndsAfterStartValidator`.
+{: .choose_best #validate_custom title="Running a custom validation" points="1" answer="1" }
+
 Now migrate:
 
 ```
@@ -324,18 +327,16 @@ git commit -m "Edited FollowRequests migration and configured FollowRequest mode
 git push
 ```
 
-[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/d4f8fb0a3e0af144cf01a11ba163826b9f7f2b68)
-
 ## Generate Likes scaffold
 
-The last table we need is Likes — tracking which users have liked which photos:
+The last table we need is Likes, which tracks which users have liked which photos:
 
 ```
 rails generate scaffold Like fan:references photo:references
 ```
 {: copyable }
 
-We're calling the user a `fan` rather than `user` because, again, `like.fan` reads much better than `like.user`.
+We're calling the user a `fan` rather than `user` because, again, `like.fan` reads better than `like.user`.
 
 Commit the generated files:
 
@@ -345,12 +346,10 @@ git commit -m "Generated Likes scaffold"
 git push
 ```
 
-[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/a5f34f54d6e433ea48e5f25f2672296c33a5a69f)
-
 ### Edit the Likes migration
 
 ```ruby{4:(52-71)}
-class CreateLikes < ActiveRecord::Migration[8.0]
+class CreateLikes < ActiveRecord::Migration[8.1]
   def change
     create_table :likes do |t|
       t.references :fan, null: false, foreign_key: { to_table: :users }
@@ -360,7 +359,6 @@ class CreateLikes < ActiveRecord::Migration[8.0]
     end
   end
 end
-
 ```
 {: filename="db/migrate/<date-time-of-migration>_create_likes.rb" }
 
@@ -394,11 +392,9 @@ git commit -m "Edited Likes migration and configured Like model"
 git push
 ```
 
-[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/f8fd53fb3c97ab64ad173682e2c370cd6fa352c4)
-
 ## Building out the associations
 
-Now comes the most important part of this lesson. We have five models with basic `belongs_to` associations already in place. But the real power of Rails comes from `has_many` and `has_many :through` associations on the "other side" of each relationship. These let us traverse the social graph with elegant, readable code.
+We have five models with basic `belongs_to` associations already in place. Next, we'll add the `has_many` and `has_many :through` associations on the "other side" of each relationship, which let us traverse the social graph starting from any record.
 
 Let's build them up step by step, starting with the Photo model and then the User model.
 
@@ -431,7 +427,7 @@ The new lines are:
 
 <div class="alert alert-info">
 
-<i class="fa-solid fa-circle-info"></i> `has_many :through` is one of the most powerful features in Rails. It lets you traverse a chain of associations to reach a distant related model. The "through" table (in this case, `likes`) acts as a **join table** connecting photos to users. This is how you model many-to-many relationships in Rails.
+<i class="fa-solid fa-circle-info"></i> `has_many :through` lets you traverse a chain of associations to reach a distant related model. The "through" table (in this case, `likes`) acts as a **join table** connecting photos to users. This is how you model many-to-many relationships in Rails.
 </div>
 
 ### User model: building up step by step
@@ -481,7 +477,7 @@ class User < ApplicationRecord
 This is a big chunk, so let's unpack it:
 
 - `has_many :sent_follow_requests` : all follow requests _this user sent_ (where they are the `sender`). We need both `foreign_key: :sender_id` and `class_name: "FollowRequest"` because the association name doesn't match the model name.
-- `has_many :accepted_sent_follow_requests, -> { accepted }` : a _scoped_ version of sent follow requests that only returns the accepted ones. The `-> { accepted }` lambda uses the scope that our `enum` on FollowRequest created for us. This is where the enum really pays off.
+- `has_many :accepted_sent_follow_requests, -> { accepted }` : a _scoped_ version of sent follow requests that only returns the accepted ones. The `-> { accepted }` lambda uses the scope that our `enum` on FollowRequest created for us.
 - `has_many :received_follow_requests` : all follow requests _sent to this user_ (where they are the `recipient`).
 - `has_many :accepted_received_follow_requests, -> { accepted }` : only the accepted ones among received requests.
 - `has_many :pending_received_follow_requests, -> { pending }` : only the pending ones. We'll use this to show a user their pending follow requests that need action.
@@ -489,6 +485,17 @@ This is a big chunk, so let's unpack it:
 <aside>
 Why do we have `dependent: :destroy` on `sent_follow_requests` and `received_follow_requests` but not on the scoped versions (`accepted_sent_follow_requests`, etc.)? Because the scoped versions are just filtered views of the same underlying records. If we put `dependent: :destroy` on those too, Rails would try to destroy the same records multiple times. We only need it on the "base" associations.
 </aside>
+
+Here's a check on which association does the cleanup.
+
+- When a user is destroyed, which association's `dependent: :destroy` deletes their accepted sent follow requests?
+- `accepted_sent_follow_requests`
+  - Not quite. That association has no `dependent:` option; it only filters records.
+- `sent_follow_requests`
+  - Yes! The accepted requests are among the user's sent requests, so the base association removes them.
+- `leaders`
+  - Not quite. Destroying through `leaders` would delete the other users, not the requests.
+{: .choose_best #dependent_destroy title="Which association cleans up" points="1" answer="2" }
 
 Now let's add the likes association:
 
@@ -509,7 +516,7 @@ Again, we need `foreign_key: :fan_id` because the `likes` table uses `fan_id`, n
 
 ### The has_many :through associations
 
-Now for the grand finale — the `has_many :through` associations that make our social network actually work. These let us traverse chains of associations to reach distant related models.
+Next come the `has_many :through` associations on User. These traverse chains of associations to reach distant related models.
 
 Let's walk through each of the new `has_many :through` associations and the other additions.
 
@@ -554,6 +561,17 @@ These are the core social graph associations:
 
 The `source:` option tells Rails which end of the FollowRequest to grab. For leaders, we want the `:recipient` (the person I sent the request _to_). For followers, we want the `:sender` (the person who sent the request _to me_).
 
+Let's check where `source:` points.
+
+- In `has_many :customers, through: :orders, source: :buyer`, where does Rails look for `buyer`?
+- A `buyer` column on the `customers` table
+  - Not quite. `source:` names an association, not a column.
+- A model called `Buyer`
+  - Not quite. The records come from whatever class the `buyer` association points to.
+- A `belongs_to :buyer` association on `Order`
+  - Yes! `source:` names the association to follow on the model we go through.
+{: .choose_best #through_source title="Where source points" points="1" answer="3" }
+
 #### pending
 
 Add the pending association:
@@ -586,9 +604,9 @@ class User < ApplicationRecord
 ```
 {: filename="app/models/user.rb" }
 
-This is where it gets really exciting. We already have `has_many :leaders` which gives us all the users I follow. Now we go _through_ those leaders to get their `own_photos`. The chain is: User → Leaders (Users) → Own Photos (Photos).
+We already have `has_many :leaders` which gives us all the users I follow. Now we go _through_ those leaders to get their `own_photos`. The chain is: User → Leaders (Users) → Own Photos (Photos).
 
-In plain English: "My feed is all the photos posted by people I follow." One line of code, and Rails handles the multi-table SQL join for us.
+In plain English: "My feed is all the photos posted by people I follow." Rails writes the multi-table SQL join for us.
 
 #### discover — the through-through with distinct
 
@@ -611,14 +629,11 @@ Similar to feed, but instead of our leaders' _own_ photos, we want photos our le
 
 The `-> { distinct }` scope is important here. Without it, if two of your leaders both liked the same photo, it would appear twice in your discover feed. The `distinct` ensures each photo appears only once.
 
-<div class="alert alert-info">
+### Other additions to the User model
 
-<i class="fa-solid fa-circle-info"></i> Take a moment to appreciate what we just built. With a handful of association declarations, we can now write `user.feed` to get a personalized timeline and `user.discover` to get a recommendation feed. No raw SQL, no complex queries scattered through controllers. Just clean, readable Ruby.
-</div>
+There are a few other things to add to the User model beyond the associations.
 
-#### Other additions
-
-There are a few other things we added to the User model beyond the associations:
+#### Removing the profile banner
 
 ```ruby{6-7,15-17}
 # ...
@@ -630,7 +645,7 @@ class User < ApplicationRecord
   after_save :purge_profile_banner, if: :remove_profile_banner
 
   before_create :set_default_avatar
-  
+
   def set_default_avatar
     # ...
   end
@@ -642,7 +657,9 @@ end
 ```
 {: filename="app/models/user.rb" }
 
-This virtual attribute (`attr_accessor :remove_profile_banner`) and callback (`after_save :purge_profile_banner, if: :remove_profile_banner`) let us remove a user's profile banner from a form checkbox. We also added the `purge_profile_banner` method, which is called by the `after_save` callback. It removes the profile banner image from Cloudinary in a background job. We'll use this in a later lesson when we build the profile edit page.
+This virtual attribute (`attr_accessor :remove_profile_banner`) and callback (`after_save :purge_profile_banner, if: :remove_profile_banner`) let us remove a user's profile banner from a form checkbox. We also added the `purge_profile_banner` method, which is called by the `after_save` callback. It removes the profile banner image from Cloudinary in a background job. We'll use it in Part 4, when we build the settings form.
+
+#### Two scopes
 
 ```ruby{6,7}
 # ...
@@ -658,7 +675,9 @@ class User < ApplicationRecord
 ```
 {: filename="app/models/user.rb" }
 
-Two useful scopes: `past_week` returns users who signed up in the last week, and `by_likes` orders users by their like count (most liked first). The `1.week.ago...` syntax is a Ruby beginless range. It means "from one week ago to now."
+Two useful scopes: `past_week` returns users who signed up in the last week, and `by_likes` orders users by their like count (most liked first). The `1.week.ago...` syntax is a Ruby endless range. It means "from one week ago onward."
+
+#### Allowing Ransack searches
 
 ```ruby{8-10}
 # ...
@@ -675,9 +694,9 @@ end
 ```
 {: filename="app/models/user.rb" }
 
-This is required by the `ransack` gem we installed previously. It explicitly allows which attributes can be searched. We only allow searching by `username`, since we don't want people searching by email or other private fields.
+This is required by the `ransack` gem we installed previously. It lists the attributes that can be searched. We only allow searching by `username`, since we don't want people searching by email or other private fields.
 
-That was a lot of additions to the User model! Ask any questions now, but we'll also refer back to these methods frequently when we start building things out on the frontend
+That was a lot of additions to the User model! Ask any questions now, but we'll also refer back to these methods frequently when we start building things out on the frontend.
 
 Let's make a commit:
 
@@ -687,38 +706,143 @@ git commit -m "Built out all associations, validations, scopes on User and Photo
 git push
 ```
 
-[See my commit for this step.](https://github.com/bpurinton/pg-industrial/commit/6a012e0b4eb1b85ec30393fe037a1f2cffe09a26)
+## Run the sample data task
 
-## Run sample data
+The starting point includes a pre-written `sample_data` rake task at `lib/tasks/dev.rake`. You don't need to write or edit it. Here's what it does:
 
-The starting point includes a pre-written `sample_data` rake task at `lib/tasks/dev.rake`. You don't need to write it; it's already done. Here's what it does at a high level:
+- Empties the app's five tables and the Active Storage tables.
+- Creates 10 users (Alice through Jack) with emails like `alice@example.com` and the password `appdev`, and makes four of them private (Bob, Carol, Eve, and Ivy).
+- Attaches an avatar image to each user, and a profile banner to Alice.
+- Creates follow requests: Alice, Bob, Carol, and Dave follow everyone else, and Eve, Frank, and Grace send everyone a pending request.
+- Creates 3 photos per user, captioned with quotes from Greek philosophers, and pins Alice's first photo.
+- Adds likes and comments on each photo from some of its owner's followers.
 
-- Creates 10 users (Alice through Jack) with emails like `alice@example.com` and the password `appdev`.
-- Makes some users private (Bob, Carol, Eve, Ivy).
-- Attaches specific avatar images from Cloudinary to each user.
-- Gives Alice a profile banner image.
-- Creates follow relationships between users (some accepted, some pending).
-- Creates 3 photos per user with philosophical captions.
-- Creates likes and comments from followers.
-- Uses `User.skip_callback(:create, :before, :set_default_avatar)` to bypass the default avatar callback, since it manually attaches specific avatars for each user.
+Most of the file uses the associations we just built. A few snippets are worth a closer look before we run it.
 
-Now that all five models are in place (User, Photo, Comment, Like, and FollowRequest), let's finally try it:
+### Making Faker repeatable
+
+```ruby
+  # Make Faker output deterministic across runs
+  Faker::Config.random = Random.new(42)
+```
+{: filename="lib/tasks/dev.rake" }
+
+Faker picks its names, hobbies, and quotes at random. Giving it a random number generator with a fixed seed (`42`) makes it pick the same values on every run, so the users' bios and the photos' captions come out the same each time we reset the data.
+
+### Starting from empty tables
+
+```ruby
+  ActiveRecord::Base.connection.execute(<<~SQL)
+    TRUNCATE TABLE
+      follow_requests, comments, likes, photos, users,
+      active_storage_variant_records, active_storage_attachments, active_storage_blobs
+    RESTART IDENTITY
+  SQL
+```
+{: filename="lib/tasks/dev.rake" }
+
+`TRUNCATE` empties all of the listed tables in one SQL statement. Listing them together lets PostgreSQL empty tables that point at each other with foreign keys. `RESTART IDENTITY` resets each table's ID counter, so after every run the first user's ID is `1` again.
+
+### Attaching images without uploading them
+
+```ruby
+    # Attach before saving, so the default-avatar callback sees an avatar and
+    # skips itself
+    attach_stable_cloudinary_url(user.avatar_image, avatar_images[counter])
+```
+{: filename="lib/tasks/dev.rake" }
+
+The `attach_stable_cloudinary_url` method is defined at the bottom of the file. It doesn't upload anything. The sample images are already hosted on our First Draft Cloudinary account, so the method creates an Active Storage blob record that points at one of them, and attaches that blob. Running the task doesn't add any files to your Cloudinary account.
+
+The avatar is attached before `user.save!`, and the comment says that the default-avatar callback then skips itself. Ours doesn't yet: `before_create :set_default_avatar` runs for every new user, downloads the default image, and replaces the avatar the task attached. Add a condition to the callback in the User model:
+
+```ruby{4:(36-74)}
+  # ...
+  after_save :purge_profile_banner, if: :remove_profile_banner
+
+  before_create :set_default_avatar, unless: -> { avatar_image.attached? }
+  # ...
+```
+{: filename="app/models/user.rb" }
+
+`unless:` takes a lambda that Rails runs just before the callback. When the lambda returns `true`, the callback is skipped. Users who sign up through the app don't have an avatar attached yet, so they still get the default one.
+
+### Building the follow graph
+
+```ruby
+      if first_user.username.in?(%w[alice bob carol dave])
+        first_user.sent_follow_requests.create(
+          recipient: second_user,
+          status: "accepted"
+        )
+      end
+```
+{: filename="lib/tasks/dev.rake" }
+
+Creating the request through `first_user.sent_follow_requests` fills in `sender_id` with `first_user`'s ID for us, so we only pass the `recipient` and the `status`.
+
+### Liking a photo through an association
+
+```ruby
+        if follower.username.in?(%w[alice bob eve frank])
+          photo.fans << follower
+        end
+```
+{: filename="lib/tasks/dev.rake" }
+
+`photo.fans << follower` writes through the `has_many :fans, through: :likes` association. Rails creates the `Like` record that connects the photo and the follower, and the counter caches on both of them go up by one.
+
+### Run it
+
+Now that all five models are in place (User, Photo, Comment, Like, and FollowRequest), let's try it:
 
 ```
 rake sample_data
 ```
 
-When it finishes, you should see output indicating that users, photos, follow requests, likes, and comments were all created successfully.
+It takes a little while. When it finishes, the last lines of output should be:
+
+```
+"There are now 10 users."
+"There are now 63 follow requests."
+"There are now 30 photos."
+"There are now 54 likes."
+"There are now 54 comments."
+```
 
 If you get any errors, double-check that:
 
 1. Your `.env` file has valid Cloudinary credentials.
 2. All five migrations have been run (`rails db:migrate`).
-3. Your models match the code shown on my commits.
+3. Your models match the code in this lesson, including the `unless:` condition on `set_default_avatar`.
 
 If anything is missing, or you hit a bug, try to resolve things and commit and push before you move on from here.
 
+<div class="alert alert-success">
+
+<i class="fa-solid fa-circle-check"></i> Run `rake sample_data` a second time. The counts come out the same, because the task empties the tables before it creates anything.
+</div>
+
+Here are two checks on the task.
+
+- After you run `rake sample_data` again, what does `User.first.id` return in `rails console`?
+- 1
+  - Yes! `RESTART IDENTITY` starts the IDs at 1 again on every run.
+- any
+  - Not quite. Try it in `rails console`.
+{: .free_text_number #first_user_id title="The first user's ID" points="1" answer="1" }
+
+For the next one, you can look at the Media Library in your Cloudinary account.
+
+- How many image files does `rake sample_data` upload to your Cloudinary account?
+- 0
+  - Yes! `attach_stable_cloudinary_url` creates blob records that point at images we already host.
+- any
+  - Not quite. `attach_stable_cloudinary_url` creates a blob record without uploading a file.
+{: .free_text_number #sample_data_uploads title="Uploads from the sample data" points="1" answer="1" }
+
 <div class="alert alert-info">
+
 <i class="fa-solid fa-circle-info"></i> The sample data task is a _very_ important step after finishing your database work. Writing, running, and exploring sample data tasks often shakes out bugs or deficiencies in the data model that we want to resolve _before_ we build a whole frontend on top of it.
 
 In the future _you_ will need to write your own sample data task, and you should do it very early before writing all of your front end code.
@@ -726,15 +850,7 @@ In the future _you_ will need to write your own sample data task, and you should
 
 ## Explore the data
 
-Now let's verify that everything is wired up correctly. Start your server with `bin/server` and visit `/rails/db` in your browser. You should see all of your tables listed. Click into each one and explore:
-
-- **Users**: You should see 10 users (Alice through Jack) with their usernames, emails, and counter columns populated.
-- **Photos**: 3 photos per user, 30 total, with captions and `owner_id` values pointing to users.
-- **Comments**: Comments on photos with `author_id` and `photo_id` values.
-- **Likes**: Records connecting fans to photos.
-- **FollowRequests**: A mix of pending and accepted follow requests.
-
-Now let's try the Rails console to see our associations in action:
+Now let's verify that everything is wired up correctly, using the Rails console to see our associations in action:
 
 ```
 rails console
@@ -753,7 +869,7 @@ alice.discover.count
 alice.pending.count
 ```
 
-Each of these should return a number (not an error). If `alice.feed` returns photos, that means the full chain of associations is working: User → Accepted Sent Follow Requests → Recipients (Leaders) → Own Photos (Feed). That's a three-table join, expressed as a single method call.
+Each of these should return a number (not an error). With the sample data, Alice's numbers are 3, 27, 9, 3, 27, 27, and 3. If `alice.feed` returns photos, that means the full chain of associations is working: User → Accepted Sent Follow Requests → Recipients (Leaders) → Own Photos (Feed).
 
 You can also test the other direction:
 
@@ -788,22 +904,21 @@ In this lesson, we:
 4. Added `counter_cache: true` to keep count columns in sync automatically.
 5. Used `enum :status` on FollowRequest to get free query methods and scopes.
 6. Built `has_many` and `has_many :through` associations on User and Photo.
-7. Created the `feed` and `discover` through-through associations, the crown jewels of our data model.
+7. Created the `feed` and `discover` associations, which each go through two other associations.
 8. Added validations (both built-in `validates` and custom `validate`).
 9. Added scopes for reusable query logic.
-10. Got `rake sample_data` running and verified everything in the console.
+10. Added a condition to the default-avatar callback, got `rake sample_data` running, and verified everything in the console.
 
 The data model is now complete. In the next lessons, we'll turn our attention to the views and controllers, building out the actual pages that users interact with.
 
 If anything is missing, or you hit a bug, try to resolve things and commit and push before you move on from here.
 
-One last thing:
+Now that all five models exist, the tests can load.
 
-Now that our backend is setup, you should be able to `rspec` (and `grade`) to start getting some passing specs (and start gaining some points for this series).
+<div class="alert alert-success">
 
-## My pull request
-
-You can visit the full diff of changes on my [pull request](https://github.com/bpurinton/pg-industrial/pull/2) in the [Files changed tab](https://github.com/bpurinton/pg-industrial/pull/2/files) if you need to compare your work to a working solution.
+<i class="fa-solid fa-circle-check"></i> Run `rspec`. You should see `66 examples, 44 failures`: the 22 model tests pass, and the 44 tests that visit pages fail until we build those pages in Parts 3 and 4. Then run `grade`, so that Grades records the passing tests.
+</div>
 
 ---
 
