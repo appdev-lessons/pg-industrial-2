@@ -229,7 +229,7 @@ end
 
 An `enum` declaration on a string column does several things automatically:
 
-1. **Validations**: The _only_ valid column values are `"pending"`, `"rejected"`, or `"accepted"`. Anything else that someone tries to sneak in will throw a validation error.
+1. **Valid values**: The _only_ values the column accepts are `"pending"`, `"rejected"`, or `"accepted"`. Assigning anything else raises an `ArgumentError` (`'foo' is not a valid status`) the moment it's assigned, before any save.
 2. **Query methods**: You can call `follow_request.pending?`, `follow_request.accepted?`, or `follow_request.rejected?` to check the status.
 3. **Update methods**: You can call `follow_request.accepted!` to change the status to "accepted" and save the record in one step.
 4. **Scopes**: You get `FollowRequest.pending`, `FollowRequest.accepted`, and `FollowRequest.rejected`. These are scopes that return all records with that status.
