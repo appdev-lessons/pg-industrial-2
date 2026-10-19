@@ -823,7 +823,7 @@ If anything is missing, or you hit a bug, try to resolve things and commit and p
 <i class="fa-solid fa-circle-check"></i> Run `rake sample_data` a second time. The counts come out the same, because the task empties the tables before it creates anything.
 </div>
 
-Here are two checks on the task.
+Here's a check on the task.
 
 - After you run `rake sample_data` again, what does `User.first.id` return in `rails console`?
 - 1
@@ -831,15 +831,6 @@ Here are two checks on the task.
 - any
   - Not quite. Try it in `rails console`.
 {: .free_text_number #first_user_id title="The first user's ID" points="1" answer="1" }
-
-For the next one, you can look at the Media Library in your Cloudinary account.
-
-- How many image files does `rake sample_data` upload to your Cloudinary account?
-- 0
-  - Yes! `attach_stable_cloudinary_url` creates blob records that point at images we already host.
-- any
-  - Not quite. `attach_stable_cloudinary_url` creates a blob record without uploading a file.
-{: .free_text_number #sample_data_uploads title="Uploads from the sample data" points="1" answer="1" }
 
 <div class="alert alert-info">
 
