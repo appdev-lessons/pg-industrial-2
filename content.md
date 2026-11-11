@@ -714,7 +714,7 @@ The starting point includes a pre-written `sample_data` rake task at `lib/tasks/
 - Creates 10 users (Alice through Jack) with emails like `alice@example.com` and the password `appdev`, and makes four of them private (Bob, Carol, Eve, and Ivy).
 - Attaches an avatar image to each user, and a profile banner to Alice.
 - Creates follow requests: Alice, Bob, Carol, and Dave follow everyone else, and Eve, Frank, and Grace send everyone a pending request.
-- Creates 3 photos per user, captioned with quotes from Greek philosophers, and pins Alice's first photo.
+- Creates 3 photos per user, captioned with quotes from Greek philosophers.
 - Adds likes and comments on each photo from some of its owner's followers.
 
 Most of the file uses the associations we just built. A few snippets are worth a closer look before we run it.
