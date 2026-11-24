@@ -259,9 +259,9 @@ Let's check which methods an `enum` gives us.
 - `Account.admin`
   - Yes! That's the scope for accounts whose role is `"admin"`.
 - `account.member?`
-  - Yes! That's the query method for one value.
+  - Right! That's the query method for one value, and it checks whether this account's role is `"member"`.
 - `account.admin!`
-  - Yes! That updates the role to `"admin"` and saves the record.
+  - Exactly. That changes the role to `"admin"` and saves the record in one step.
 {: .choose_all #enum_methods title="Methods from an enum" points="1" answer="[2,3,4]" }
 
 ### Scoped uniqueness validation
@@ -306,9 +306,9 @@ Here's a check on `validate` and `validates`.
 
 - An `Event` model has a method called `ends_after_start`. Which line runs it as a validation?
 - `validate :ends_after_start`
-  - Yes! `validate` (singular) runs a method we wrote.
+  - Yes! `validate` (singular) is for a validation method that we wrote ourselves, and it takes the method's name.
 - `validates :ends_after_start`
-  - Not quite. `validates` (plural) expects an attribute and a built-in validator, like `presence: true`.
+  - Close! `validates` (plural) expects an attribute and a built-in validator, like `presence: true`.
 - `validates :ends_at, ends_after_start: true`
   - Not quite. That would look for a validator class called `EndsAfterStartValidator`.
 {: .choose_best #validate_custom title="Running a custom validation" points="1" answer="1" }
@@ -490,7 +490,7 @@ Here's a check on which association does the cleanup.
 
 - When a user is destroyed, which association's `dependent: :destroy` deletes their accepted sent follow requests?
 - `accepted_sent_follow_requests`
-  - Not quite. That association has no `dependent:` option; it only filters records.
+  - That association has no `dependent:` option. It's a filtered view of the same records as another association.
 - `sent_follow_requests`
   - Yes! The accepted requests are among the user's sent requests, so the base association removes them.
 - `leaders`
@@ -567,7 +567,7 @@ Let's check where `source:` points.
 - A `buyer` column on the `customers` table
   - Not quite. `source:` names an association, not a column.
 - A model called `Buyer`
-  - Not quite. The records come from whatever class the `buyer` association points to.
+  - There doesn't have to be a `Buyer` model. The records come from whatever class the `buyer` association points to.
 - A `belongs_to :buyer` association on `Order`
   - Yes! `source:` names the association to follow on the model we go through.
 {: .choose_best #through_source title="Where source points" points="1" answer="3" }
